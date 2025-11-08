@@ -1,5 +1,6 @@
 .PHONY: proto-all build-all run-all test-all benchmark-all benchmark-unit benchmark-integration benchmark-load up-infra down clean stop-all benchmark-auth benchmark-order benchmark-payment benchmark-restaurant benchmark-delivery benchmark-tracking
 
+# Replace the bash version with PowerShell
 proto-all:
 	powershell -ExecutionPolicy Bypass -File generate-proto.ps1
 

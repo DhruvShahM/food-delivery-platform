@@ -51,9 +51,10 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+          go-mod-${{ runner.os }}-
     
     - name: Check Go formatting
       run: |
@@ -106,12 +107,22 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+          go-mod-${{ runner.os }}-
+    
+    - name: Install PowerShell
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget apt-transport-https software-properties-common
+        wget -q "https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb"
+        sudo dpkg -i packages-microsoft-prod.deb
+        sudo apt-get update
+        sudo apt-get install -y powershell
     
     - name: Generate Protobuf files
-      run: make proto-all
+      run: pwsh generate-proto.ps1
     
     - name: Run unit tests
       run: make test-all
@@ -141,9 +152,10 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+          go-mod-${{ runner.os }}-
     
     - name: Build ${{ matrix.service }}
       run: |

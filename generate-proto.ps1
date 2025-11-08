@@ -34,4 +34,3 @@ foreach ($service in $services) {
 }
 
 Write-Host "Proto generation complete!" -ForegroundColor Green
-
