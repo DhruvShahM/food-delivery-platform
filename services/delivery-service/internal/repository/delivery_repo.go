@@ -25,13 +25,13 @@ func (r *DeliveryRepo) AssignDelivery(orderId, agentId string) error {
 	return nil
 }
 
-func (r *DeliveryRepo) Assign(orderId, agentId string) error {
-	_, err := r.db.Exec("INSERT INTO deliveries (order_id, agent_id, status) VALUES ($1, $2, 'assigned')", orderId, agentId)
-	if err != nil {
-		r.logger.Error("Assign error", zap.Error(err))
-		return err
-	}
-	return nil
+func (r *DeliveryRepo) Assign(deliveryId, orderId, agentId string) error {
+    _, err := r.db.Exec("INSERT INTO deliveries (id, order_id, agent_id, status) VALUES ($1, $2, $3, 'assigned')", deliveryId, orderId, agentId)
+    if err != nil {
+        r.logger.Error("Assign error", zap.Error(err))
+        return err
+    }
+    return nil
 }
 
 func (r *DeliveryRepo) Init() error {
