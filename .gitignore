@@ -1,0 +1,128 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server
+server.exe
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.prof
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Compiled binaries
+bin/
+**/bin/
+services/*/bin/
+services/*/bin/*
+
+# Generated protobuf files
+*.pb.go
+**/*.pb.go
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.cover
+*.coverprofile
+
+# Benchmark results and analysis
+benchmark/results.json
+benchmark/analysis.json
+benchmark/report.html
+benchmark/*.html
+benchmark/*.pdf
+
+# Test artifacts
+test-results/
+test-reports/
+junit.xml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.yaml.bak
+k8s/backup/
+
+# Backup directories
+**/backup/
+backup/
+
+# Node modules (if any JS tools are used)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets and keys
+secrets/
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Helm
+charts/*/charts/
