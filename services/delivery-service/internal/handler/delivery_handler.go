@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"time" // ✅ Add missing time import
 
 	"food-delivery-platform/services/delivery-service/internal/proto"
 	"food-delivery-platform/services/delivery-service/internal/repository"
@@ -22,11 +23,12 @@ func NewDeliveryHandler(repo *repository.DeliveryRepo, logger *zap.Logger) *Deli
 	return &DeliveryHandler{repo: repo, logger: logger}
 }
 
+// In services/delivery-service/internal/handler/delivery_handler.go
 func (h *DeliveryHandler) AssignDelivery(ctx context.Context, req *proto.AssignDeliveryRequest) (*proto.AssignDeliveryResponse, error) {
-	deliveryId := fmt.Sprintf("delivery_%d", time.Now().UnixNano()) // Generate delivery ID
+	deliveryId := fmt.Sprintf("delivery_%d", time.Now().UnixNano())
 	agentId := fmt.Sprintf("agent_%d", rand.Int31())
 
-	err := h.repo.Assign(deliveryId, req.OrderId, agentId) // Pass delivery ID
+	err := h.repo.Assign(deliveryId, req.OrderId, agentId) // ✅ Use new method signature
 	if err != nil {
 		h.logger.Error("Assign error", zap.Error(err))
 		return nil, status.Error(codes.Internal, "Internal error")
