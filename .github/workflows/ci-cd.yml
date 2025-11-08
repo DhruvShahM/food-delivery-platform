@@ -200,6 +200,12 @@ jobs:
         echo "- Integration tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
         echo "- Load tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
 
+    - name: Run unit tests
+      run: ./test-all-services.sh
+
+    - name: Run unit benchmarks
+      run: make benchmark-unit        
+
   # ===== DEPLOY STAGING =====
   deploy-staging:
     name: 'Deploy to Staging'
