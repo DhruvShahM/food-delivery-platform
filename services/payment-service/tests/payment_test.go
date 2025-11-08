@@ -31,14 +31,14 @@ func (suite *PaymentTestSuite) SetupTest() {
 	suite.logger, _ = zap.NewDevelopment()
 	suite.redis = redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	suite.client = client.NewPaymentClient(nil, suite.logger) // Remove cbManager parameter
-	
+
 	// Set environment variables for testing
 	os.Setenv("DB_HOST", "localhost")
 	os.Setenv("DB_PORT", "5432")
 	os.Setenv("DB_USER", "postgres")
 	os.Setenv("DB_PASSWORD", "postgres")
 	os.Setenv("DB_NAME", "fooddb")
-	
+
 	var err error
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -49,7 +49,7 @@ func (suite *PaymentTestSuite) SetupTest() {
 			getEnvOrDefault("DB_PORT", "5432"),
 			getEnvOrDefault("DB_NAME", "fooddb"))
 	}
-	
+
 	suite.db, err = sql.Open("postgres", dbURL)
 	suite.NoError(err, "Failed to connect to database")
 
@@ -88,15 +88,15 @@ func (suite *PaymentTestSuite) TestPaymentHandler_ProcessPayment_Success() {
 	}
 
 	req := &proto.ProcessPaymentRequest{
-		OrderId: "test-order",  // Changed from UserId to OrderId
+		OrderId: "test-order", // Changed from UserId to OrderId
 		Amount:  100.0,
 	}
 
 	resp, err := suite.handler.ProcessPayment(context.Background(), req)
 	suite.NoError(err)
 	suite.NotNil(resp)
-	suite.NotEmpty(resp.PaymentId)  // Changed from Success to PaymentId
-	suite.Equal("completed", resp.Status)  // Check status field
+	suite.NotEmpty(resp.PaymentId)        // Changed from Success to PaymentId
+	suite.Equal("completed", resp.Status) // Check status field
 }
 
 func (suite *PaymentTestSuite) TestPaymentHandler_ProcessPayment_InsufficientFunds() {
@@ -106,14 +106,14 @@ func (suite *PaymentTestSuite) TestPaymentHandler_ProcessPayment_InsufficientFun
 	}
 
 	req := &proto.ProcessPaymentRequest{
-		OrderId: "test-order",  // Changed from UserId to OrderId
-		Amount:  1000000.0, // Very large amount
+		OrderId: "test-order", // Changed from UserId to OrderId
+		Amount:  1000000.0,    // Very large amount
 	}
 
 	resp, err := suite.handler.ProcessPayment(context.Background(), req)
 	suite.NoError(err)
 	suite.NotNil(resp)
-	suite.Equal("failed", resp.Status)  // Changed from !resp.Success to status check
+	suite.Equal("failed", resp.Status) // Changed from !resp.Success to status check
 }
 
 func TestPaymentTestSuite(t *testing.T) {

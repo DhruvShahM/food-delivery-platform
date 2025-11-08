@@ -2,24 +2,24 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
 )
 
 type Config struct {
-	GRPCPort     string   `mapstructure:"grpc_port"`
-	HTTPPort     string   `mapstructure:"http_port"`
-	DBURL        string   `mapstructure:"db_url"`
-	
+	GRPCPort string `mapstructure:"grpc_port"`
+	HTTPPort string `mapstructure:"http_port"`
+	DBURL    string `mapstructure:"db_url"`
+
 	// Individual DB components for environment variable override
-	DBHost       string   `mapstructure:"db_host" env:"DB_HOST"`
-	DBPort       string   `mapstructure:"db_port" env:"DB_PORT"`
-	DBUser       string   `mapstructure:"db_user" env:"DB_USER"`
-	DBPassword   string   `mapstructure:"db_password" env:"DB_PASSWORD"`
-	DBName       string   `mapstructure:"db_name" env:"DB_NAME"`
-	
+	DBHost     string `mapstructure:"db_host" env:"DB_HOST"`
+	DBPort     string `mapstructure:"db_port" env:"DB_PORT"`
+	DBUser     string `mapstructure:"db_user" env:"DB_USER"`
+	DBPassword string `mapstructure:"db_password" env:"DB_PASSWORD"`
+	DBName     string `mapstructure:"db_name" env:"DB_NAME"`
+
 	JWTSecret    string   `mapstructure:"jwt_secret"`
 	KafkaBrokers []string `mapstructure:"kafka_brokers"`
 	LogLevel     string   `mapstructure:"log_level"`
@@ -32,13 +32,13 @@ func LoadConfig() (*Config, error) {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath("../config")
-	
+
 	// Enable environment variable reading
 	viper.AutomaticEnv()
-	
+
 	// Set environment variable prefixes for better organization
 	viper.SetEnvPrefix("FOOD_DELIVERY") // Optional: FOOD_DELIVERY_DB_HOST, etc.
-	
+
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}

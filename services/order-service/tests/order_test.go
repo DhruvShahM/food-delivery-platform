@@ -7,12 +7,12 @@ import (
 	"os"
 	"testing"
 
+	commonproto "food-delivery-platform/common/proto"
 	"food-delivery-platform/services/order-service/internal/handler"
 	"food-delivery-platform/services/order-service/internal/proto"
 	"food-delivery-platform/services/order-service/internal/repository"
-	commonproto "food-delivery-platform/common/proto"
-	"github.com/segmentio/kafka-go"
 	_ "github.com/lib/pq"
+	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
@@ -28,21 +28,21 @@ type OrderTestSuite struct {
 
 func (suite *OrderTestSuite) SetupTest() {
 	suite.logger, _ = zap.NewDevelopment()
-	
+
 	// Kafka writer for testing
 	suite.kafka = &kafka.Writer{
 		Addr:     kafka.TCP("localhost:9092"),
 		Topic:    "order-events",
 		Balancer: &kafka.LeastBytes{},
 	}
-	
+
 	// Set environment variables for testing
 	os.Setenv("DB_HOST", "localhost")
 	os.Setenv("DB_PORT", "5432")
 	os.Setenv("DB_USER", "postgres")
 	os.Setenv("DB_PASSWORD", "postgres")
 	os.Setenv("DB_NAME", "fooddb")
-	
+
 	var err error
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -53,7 +53,7 @@ func (suite *OrderTestSuite) SetupTest() {
 			getEnvOrDefault("DB_PORT", "5432"),
 			getEnvOrDefault("DB_NAME", "fooddb"))
 	}
-	
+
 	suite.db, err = sql.Open("postgres", dbURL)
 	suite.NoError(err, "Failed to connect to database")
 
@@ -80,7 +80,7 @@ func (suite *OrderTestSuite) TestOrderHandler_PlaceOrder() {
 	}
 
 	req := &proto.PlaceOrderRequest{
-		UserId:      "test-user",
+		UserId:       "test-user",
 		RestaurantId: "test-restaurant",
 		Items: []*commonproto.MenuItem{
 			{Id: "1", Name: "Test Item", Price: 10.0, Available: true},
