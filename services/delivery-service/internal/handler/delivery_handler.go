@@ -28,7 +28,7 @@ func (h *DeliveryHandler) AssignDelivery(ctx context.Context, req *proto.AssignD
 	deliveryId := fmt.Sprintf("delivery_%d", time.Now().UnixNano())
 	agentId := fmt.Sprintf("agent_%d", rand.Int31())
 
-	err := h.repo.Assign(deliveryId, req.OrderId, agentId) // ✅ Use new method signature
+	err := h.repo.Assign(deliveryId, req.OrderId, agentId)
 	if err != nil {
 		h.logger.Error("Assign error", zap.Error(err))
 		return nil, status.Error(codes.Internal, "Internal error")

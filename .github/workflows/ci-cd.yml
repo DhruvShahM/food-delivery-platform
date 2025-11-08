@@ -180,7 +180,7 @@ jobs:
         );
         
         CREATE TABLE IF NOT EXISTS deliveries (
-            id SERIAL PRIMARY KEY,  -- Change from VARCHAR(50) to SERIAL
+            id VARCHAR(50) PRIMARY KEY,  -- ✅ VARCHAR to match proto strings
             order_id VARCHAR(50) NOT NULL,
             agent_id VARCHAR(50),
             status VARCHAR(50) DEFAULT 'assigned',
