@@ -23,4 +23,6 @@ Microservices-based food delivery app with gRPC, Kafka, OTEL, Prometheus, Grafan
 - Grafana: http://localhost:3000 (admin/admin)
 
 ## Tech
-Go 1.21, gRPC, Kafka, Postgres, Redis, Gin, OTEL, Zap.
+Go 1.21, gRPC, Kafka, Postgres, Redis, Gin, OTEL, Zap. 
+
+Demo changes
