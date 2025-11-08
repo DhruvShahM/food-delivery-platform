@@ -28,14 +28,14 @@ type RestaurantTestSuite struct {
 func (suite *RestaurantTestSuite) SetupTest() {
 	suite.logger, _ = zap.NewDevelopment()
 	suite.redis = redis.NewClient(&redis.Options{Addr: "localhost:6379"})
-
+	
 	// Set environment variables for testing
 	os.Setenv("DB_HOST", "localhost")
 	os.Setenv("DB_PORT", "5432")
 	os.Setenv("DB_USER", "postgres")
 	os.Setenv("DB_PASSWORD", "postgres")
 	os.Setenv("DB_NAME", "fooddb")
-
+	
 	var err error
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -46,7 +46,7 @@ func (suite *RestaurantTestSuite) SetupTest() {
 			getEnvOrDefault("DB_PORT", "5432"),
 			getEnvOrDefault("DB_NAME", "fooddb"))
 	}
-
+	
 	suite.db, err = sql.Open("postgres", dbURL)
 	suite.NoError(err, "Failed to connect to database")
 

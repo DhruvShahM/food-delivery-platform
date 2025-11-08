@@ -26,7 +26,7 @@ clean:
 	for /d %d in (services\*) do (if exist "%d\bin" rmdir /s /q "%d\bin")
 
 benchmark-unit:
-	powershell -ExecutionPolicy Bypass -File benchmark-unit.ps1
+	./benchmark-unit.sh
 
 benchmark-integration:
 	cd tests/integration && go test -bench=. -benchmem -benchtime=10s .
