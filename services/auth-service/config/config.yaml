@@ -1,6 +1,14 @@
 grpc_port: ":50051"
 http_port: ":8080"
 db_url: "postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+
+# Individual DB components (can be overridden by environment variables)
+db_host: "localhost"
+db_port: "5432"
+db_user: "root"
+db_password: "root"
+db_name: "fooddb"
+
+jwt_secret: "supersecretkey"
 kafka_brokers: ["localhost:9092"]
 log_level: "info"
-jwt_secret: "supersecretkey"

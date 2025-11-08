@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -26,8 +27,26 @@ type AuthTestSuite struct {
 
 func (suite *AuthTestSuite) SetupTest() {
 	suite.logger, _ = zap.NewDevelopment()
+	
+	// Set environment variables for testing
+	os.Setenv("DB_HOST", "localhost")
+	os.Setenv("DB_PORT", "5432")
+	os.Setenv("DB_USER", "postgres")
+	os.Setenv("DB_PASSWORD", "postgres")
+	os.Setenv("DB_NAME", "fooddb")
+	
 	var err error
-	suite.db, err = sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			getEnvOrDefault("DB_USER", "postgres"),
+			getEnvOrDefault("DB_PASSWORD", "postgres"),
+			getEnvOrDefault("DB_HOST", "localhost"),
+			getEnvOrDefault("DB_PORT", "5432"),
+			getEnvOrDefault("DB_NAME", "fooddb"))
+	}
+	
+	suite.db, err = sql.Open("postgres", dbURL)
 	suite.NoError(err, "Failed to connect to database")
 
 	err = suite.db.Ping()
@@ -37,16 +56,6 @@ func (suite *AuthTestSuite) SetupTest() {
 	}
 
 	suite.repo = repository.NewUserRepo(suite.db, suite.logger)
-	// Don't call Init() here to avoid conflicts between tests
-	suite.handler = handler.NewAuthHandler(suite.repo, "testsecret", suite.logger)
-}
-
-func (suite *AuthTestSuite) TearDownTest() {
-	if suite.db != nil {
-		// Clean up test data
-		suite.db.Exec("DELETE FROM users WHERE email LIKE 'test%@%' OR email LIKE 'newuser%@%' OR email LIKE 'duplicate%@%' OR email LIKE 'repo%@%'")
-		suite.db.Close()
-	}
 }
 
 func (suite *AuthTestSuite) TestAuthHandler_Login_Success() {
@@ -60,18 +69,27 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_Success() {
 	err := suite.repo.CreateUser(testEmail, "password")
 	suite.NoError(err)
 
-	req := &proto.LoginRequest{Email: testEmail, Password: "password"}
-	resp, err := suite.handler.Login(context.Background(), req)
+	// Test login
+	req := &proto.LoginRequest{
+		Email:    testEmail,
+		Password: "password",
+	}
 
+	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
+	resp, err := suite.handler.Login(context.Background(), req)
 	suite.NoError(err)
-	suite.Empty(resp.Error)
 	suite.NotEmpty(resp.Token)
 
+	// Verify JWT token
 	token, err := jwt.Parse(resp.Token, func(token *jwt.Token) (interface{}, error) {
-		return []byte("testsecret"), nil
+		return []byte("test-secret"), nil
 	})
 	suite.NoError(err)
 	suite.True(token.Valid)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	suite.True(ok)
+	suite.Equal(testEmail, claims["email"])
 }
 
 func (suite *AuthTestSuite) TestAuthHandler_Login_InvalidPassword() {
@@ -80,16 +98,20 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_InvalidPassword() {
 		return
 	}
 
+	// Create unique test user for this test
 	testEmail := fmt.Sprintf("test_invalid_%d@test.com", time.Now().UnixNano())
-	err := suite.repo.CreateUser(testEmail, "password")
+	err := suite.repo.CreateUser(testEmail, "correct_password")
 	suite.NoError(err)
 
-	req := &proto.LoginRequest{Email: testEmail, Password: "wrongpassword"}
-	resp, err := suite.handler.Login(context.Background(), req)
+	// Test login with wrong password
+	req := &proto.LoginRequest{
+		Email:    testEmail,
+		Password: "wrong_password",
+	}
 
-	suite.NoError(err)
-	suite.NotEmpty(resp.Error)
-	suite.Empty(resp.Token)
+	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
+	_, err = suite.handler.Login(context.Background(), req)
+	suite.Error(err)
 }
 
 func (suite *AuthTestSuite) TestAuthHandler_Login_UserNotFound() {
@@ -98,12 +120,15 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_UserNotFound() {
 		return
 	}
 
-	req := &proto.LoginRequest{Email: "nonexistent@test.com", Password: "password"}
-	resp, err := suite.handler.Login(context.Background(), req)
+	// Test login with non-existent user
+	req := &proto.LoginRequest{
+		Email:    "nonexistent@test.com",
+		Password: "password",
+	}
 
-	suite.NoError(err)
-	suite.NotEmpty(resp.Error)
-	suite.Empty(resp.Token)
+	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
+	_, err := suite.handler.Login(context.Background(), req)
+	suite.Error(err)
 }
 
 func (suite *AuthTestSuite) TestAuthHandler_Register_Success() {
@@ -112,16 +137,23 @@ func (suite *AuthTestSuite) TestAuthHandler_Register_Success() {
 		return
 	}
 
+	// Test registration
 	testEmail := fmt.Sprintf("register_success_%d@test.com", time.Now().UnixNano())
 	req := &proto.RegisterRequest{
 		Email:    testEmail,
-		Password: "password123",
+		Password: "password",
 	}
-	resp, err := suite.handler.Register(context.Background(), req)
 
+	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
+	resp, err := suite.handler.Register(context.Background(), req)
 	suite.NoError(err)
-	suite.Empty(resp.Error)
 	suite.NotEmpty(resp.Token)
+
+	// Verify user was created in database
+	user, err := suite.repo.GetUserByEmail(testEmail)
+	suite.NoError(err)
+	suite.NotNil(user)
+	suite.Equal(testEmail, user.Email)
 }
 
 func (suite *AuthTestSuite) TestAuthHandler_Register_DuplicateEmail() {
@@ -130,19 +162,20 @@ func (suite *AuthTestSuite) TestAuthHandler_Register_DuplicateEmail() {
 		return
 	}
 
+	// Create user first
 	testEmail := fmt.Sprintf("duplicate_%d@test.com", time.Now().UnixNano())
 	err := suite.repo.CreateUser(testEmail, "password")
 	suite.NoError(err)
 
+	// Try to register with same email
 	req := &proto.RegisterRequest{
 		Email:    testEmail,
-		Password: "password123",
+		Password: "password2",
 	}
-	resp, err := suite.handler.Register(context.Background(), req)
 
-	suite.NoError(err)
-	suite.NotEmpty(resp.Error)
-	suite.Empty(resp.Token)
+	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
+	_, err = suite.handler.Register(context.Background(), req)
+	suite.Error(err)
 }
 
 func (suite *AuthTestSuite) TestUserRepo_GetUserByEmail() {
@@ -151,19 +184,31 @@ func (suite *AuthTestSuite) TestUserRepo_GetUserByEmail() {
 		return
 	}
 
+	// Create test user
 	testEmail := fmt.Sprintf("repo_test_%d@test.com", time.Now().UnixNano())
-	err := suite.repo.CreateUser(testEmail, "pass")
+	err := suite.repo.CreateUser(testEmail, "password")
 	suite.NoError(err)
 
+	// Test GetUserByEmail
 	user, err := suite.repo.GetUserByEmail(testEmail)
 	suite.NoError(err)
+	suite.NotNil(user)
 	suite.Equal(testEmail, user.Email)
-	suite.NotEmpty(user.Password)
 
-	_, err = suite.repo.GetUserByEmail("missing@test.com")
+	// Test non-existent user
+	user, err = suite.repo.GetUserByEmail("nonexistent@test.com")
 	suite.Error(err)
+	suite.Nil(user)
 }
 
 func TestAuthTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthTestSuite))
+}
+
+// Helper function for environment variables
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

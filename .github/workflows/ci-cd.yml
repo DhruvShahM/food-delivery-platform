@@ -66,7 +66,6 @@ jobs:
 
   # ===== UNIT TESTS =====
   unit-tests:
-    name: 'Unit Tests'
     runs-on: ubuntu-latest
     needs: lint-and-format
     services:
@@ -124,6 +123,15 @@ jobs:
     - name: Enable memory overcommit for Redis
       run: sudo sysctl vm.overcommit_memory=1
     
+    # Override database credentials for CI/CD
+    - name: Set CI database credentials
+      run: |
+        echo "DB_HOST=localhost" >> $GITHUB_ENV
+        echo "DB_PORT=5432" >> $GITHUB_ENV
+        echo "DB_USER=postgres" >> $GITHUB_ENV
+        echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
+        echo "DB_NAME=fooddb" >> $GITHUB_ENV
+    
     - name: Generate Protobuf files
       run: pwsh generate-proto.ps1
     
@@ -132,7 +140,6 @@ jobs:
     
     - name: Run unit benchmarks
       run: make benchmark-unit
-
   # ===== BUILD =====
   build:
     name: 'Build Services'

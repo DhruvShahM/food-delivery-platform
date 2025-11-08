@@ -1,43 +1,33 @@
-// services/order-service/internal/client/payment_client.go
+// services/payment-service/internal/client/payment_client.go
 package client
 
 import (
 	"context"
 	"time"
 
-	"food-delivery-platform/services/order-service/internal/middleware"
-	"github.com/sony/gobreaker"
+	payment "food-delivery-platform/services/payment-service/internal/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 type PaymentClient struct {
 	client payment.PaymentServiceClient
-	cb     *middleware.CircuitBreaker
 	logger *zap.Logger
 }
 
-func NewPaymentClient(conn *grpc.ClientConn, cbManager *middleware.CircuitBreakerManager, logger *zap.Logger) *PaymentClient {
-	cb := cbManager.GetOrCreateBreaker("payment-client", &middleware.CircuitBreakerConfig{
-		MaxRequests:  5,
-		Interval:     30 * time.Second,
-		Timeout:      10 * time.Second,
-		FailureRatio: 0.5,
-		Logger:       logger,
-	})
-
+func NewPaymentClient(conn *grpc.ClientConn, logger *zap.Logger) *PaymentClient {
 	return &PaymentClient{
 		client: payment.NewPaymentServiceClient(conn),
-		cb:     cb,
 		logger: logger,
 	}
 }
 
 func (pc *PaymentClient) ProcessPayment(ctx context.Context, req *payment.ProcessPaymentRequest) (*payment.ProcessPaymentResponse, error) {
-	result, err := pc.cb.cb.Execute(func() (interface{}, error) {
-		return pc.client.ProcessPayment(ctx, req)
-	})
+	// Add timeout to context
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
+	resp, err := pc.client.ProcessPayment(ctx, req)
 	if err != nil {
 		pc.logger.Error("Payment service call failed",
 			zap.Error(err),
@@ -46,5 +36,22 @@ func (pc *PaymentClient) ProcessPayment(ctx context.Context, req *payment.Proces
 		return nil, err
 	}
 
-	return result.(*payment.ProcessPaymentResponse), nil
+	return resp, nil
+}
+
+func (pc *PaymentClient) GetBalance(ctx context.Context, req *payment.GetBalanceRequest) (*payment.GetBalanceResponse, error) {
+	// Add timeout to context
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	resp, err := pc.client.GetBalance(ctx, req)
+	if err != nil {
+		pc.logger.Error("Payment service call failed",
+			zap.Error(err),
+			zap.String("method", "GetBalance"),
+		)
+		return nil, err
+	}
+
+	return resp, nil
 }
