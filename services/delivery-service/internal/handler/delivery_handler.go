@@ -23,17 +23,17 @@ func NewDeliveryHandler(repo *repository.DeliveryRepo, logger *zap.Logger) *Deli
 }
 
 func (h *DeliveryHandler) AssignDelivery(ctx context.Context, req *proto.AssignDeliveryRequest) (*proto.AssignDeliveryResponse, error) {
-    deliveryId := fmt.Sprintf("delivery_%d", time.Now().UnixNano())  // Generate delivery ID
-    agentId := fmt.Sprintf("agent_%d", rand.Int31())
-    
-    err := h.repo.Assign(deliveryId, req.OrderId, agentId)  // Pass delivery ID
-    if err != nil {
-        h.logger.Error("Assign error", zap.Error(err))
-        return nil, status.Error(codes.Internal, "Internal error")
-    }
-    
-    h.logger.Info("Delivery assigned", zap.String("delivery_id", deliveryId), zap.String("order_id", req.OrderId), zap.String("agent_id", agentId))
-    return &proto.AssignDeliveryResponse{AgentId: agentId}, nil
+	deliveryId := fmt.Sprintf("delivery_%d", time.Now().UnixNano()) // Generate delivery ID
+	agentId := fmt.Sprintf("agent_%d", rand.Int31())
+
+	err := h.repo.Assign(deliveryId, req.OrderId, agentId) // Pass delivery ID
+	if err != nil {
+		h.logger.Error("Assign error", zap.Error(err))
+		return nil, status.Error(codes.Internal, "Internal error")
+	}
+
+	h.logger.Info("Delivery assigned", zap.String("delivery_id", deliveryId), zap.String("order_id", req.OrderId), zap.String("agent_id", agentId))
+	return &proto.AssignDeliveryResponse{AgentId: agentId}, nil
 }
 
 func (h *DeliveryHandler) UpdateStatus(ctx context.Context, req *proto.UpdateStatusRequest) (*proto.UpdateStatusResponse, error) {
