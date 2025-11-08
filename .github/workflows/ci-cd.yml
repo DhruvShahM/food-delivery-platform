@@ -100,9 +100,10 @@ jobs:
     
     - name: Make scripts executable
       run: |
-        chmod +x *.sh
-        chmod +x scripts/*.sh
-        find services -name "*.sh" -exec chmod +x {} \;
+        chmod +x *.sh 2>/dev/null || true
+        if [ -d "scripts" ] && [ "$(ls scripts/*.sh 2>/dev/null | wc -l)" -gt 0 ]; then
+          chmod +x scripts/*.sh
+        fi
     
     - name: Set up Go
       uses: actions/setup-go@v4
