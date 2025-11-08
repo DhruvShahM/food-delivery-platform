@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password TEXT NOT NULL,  -- Changed from password_hash to password
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -62,6 +62,5 @@ INSERT INTO menu_items (id, name, price, available) VALUES
 ('item2', 'Test Burger', 12.99, true)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO users (email, password_hash) VALUES 
-('test@example.com', '.hash.here')
-ON CONFLICT (email) DO NOTHING;
+-- Update the existing test user data to use password instead of password_hash
+UPDATE users SET password = '$2a$10$example.hash.here' WHERE email = 'test@example.com';
