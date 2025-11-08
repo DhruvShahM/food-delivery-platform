@@ -26,37 +26,37 @@ type AuthTestSuite struct {
 }
 
 func (suite *AuthTestSuite) SetupTest() {
-    suite.logger, _ = zap.NewDevelopment()
-    
-    // Set environment variables for testing
-    os.Setenv("DB_HOST", "localhost")
-    os.Setenv("DB_PORT", "5432") 
-    os.Setenv("DB_USER", "postgres")
-    os.Setenv("DB_PASSWORD", "postgres")
-    os.Setenv("DB_NAME", "fooddb")
-    
-    var err error
-    dbURL := os.Getenv("DATABASE_URL")
-    if dbURL == "" {
-        dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-            getEnvOrDefault("DB_USER", "postgres"),
-            getEnvOrDefault("DB_PASSWORD", "postgres"),
-            getEnvOrDefault("DB_HOST", "localhost"),
-            getEnvOrDefault("DB_PORT", "5432"),
-            getEnvOrDefault("DB_NAME", "fooddb"))
-    }
-    
-    suite.db, err = sql.Open("postgres", dbURL)
-    suite.NoError(err, "Failed to connect to database")
+	suite.logger, _ = zap.NewDevelopment()
 
-    err = suite.db.Ping()
-    if err != nil {
-        suite.T().Skip("Database not available, skipping tests")
-        return
-    }
+	// Set environment variables for testing
+	os.Setenv("DB_HOST", "localhost")
+	os.Setenv("DB_PORT", "5432")
+	os.Setenv("DB_USER", "postgres")
+	os.Setenv("DB_PASSWORD", "postgres")
+	os.Setenv("DB_NAME", "fooddb")
 
-    suite.repo = repository.NewUserRepo(suite.db, suite.logger)
-    // Don't call Init() here to avoid conflicts between tests
+	var err error
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			getEnvOrDefault("DB_USER", "postgres"),
+			getEnvOrDefault("DB_PASSWORD", "postgres"),
+			getEnvOrDefault("DB_HOST", "localhost"),
+			getEnvOrDefault("DB_PORT", "5432"),
+			getEnvOrDefault("DB_NAME", "fooddb"))
+	}
+
+	suite.db, err = sql.Open("postgres", dbURL)
+	suite.NoError(err, "Failed to connect to database")
+
+	err = suite.db.Ping()
+	if err != nil {
+		suite.T().Skip("Database not available, skipping tests")
+		return
+	}
+
+	suite.repo = repository.NewUserRepo(suite.db, suite.logger)
+	// Don't call Init() here to avoid conflicts between tests
 }
 
 func (suite *AuthTestSuite) TestAuthHandler_Login_Success() {
