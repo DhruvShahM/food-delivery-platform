@@ -93,7 +93,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -101,8 +101,9 @@ jobs:
     - name: Make scripts executable
       run: |
         chmod +x *.sh 2>/dev/null || true
-        if [ -d "scripts" ] && [ "$(ls scripts/*.sh 2>/dev/null | wc -l)" -gt 0 ]; then
-          chmod +x scripts/*.sh
+        if [ -d "scripts" ]; then
+          chmod +x scripts/*.sh 2>/dev/null || true
+          chmod +r scripts/*.sql 2>/dev/null || true
         fi
     
     - name: Set up Go
@@ -132,25 +133,79 @@ jobs:
       run: sudo sysctl vm.overcommit_memory=1
     
     # Set up database schema
-# Set up database schema
-  - name: Set up test database schema
-    run: |
-      echo "Setting up database schema..."
-      PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -f scripts/init-db.sql -v ON_ERROR_STOP=1
-      if [ $? -ne 0 ]; then
-        echo "Database schema setup failed!"
-        exit 1
-      fi
-      
-      # Verify tables were created
-      PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "\dt" | grep -E "(users|menu_items|orders|payments|deliveries)"
-      if [ $? -ne 0 ]; then
-        echo "Tables were not created successfully!"
-        PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "\dt"
-        exit 1
-      fi
-      
-      echo "Database schema setup completed successfully!"
+    - name: Set up test database schema
+      run: |
+        echo "Creating database schema..."
+        PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS menu_items (
+            id VARCHAR(50) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            available BOOLEAN DEFAULT true,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS orders (
+            id VARCHAR(50) PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            restaurant_id VARCHAR(50) NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            status VARCHAR(50) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS order_items (
+            id SERIAL PRIMARY KEY,
+            order_id VARCHAR(50) NOT NULL,
+            menu_item_id VARCHAR(50) NOT NULL,
+            quantity INTEGER NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            FOREIGN KEY (order_id) REFERENCES orders(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS payments (
+            id VARCHAR(50) PRIMARY KEY,
+            order_id VARCHAR(50) NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            status VARCHAR(50) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS deliveries (
+            id VARCHAR(50) PRIMARY KEY,
+            order_id VARCHAR(50) NOT NULL,
+            agent_id VARCHAR(50),
+            status VARCHAR(50) DEFAULT 'assigned',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        INSERT INTO menu_items (id, name, price, available) VALUES 
+        ('item1', 'Test Pizza', 15.99, true),
+        ('item2', 'Test Burger', 12.99, true)
+        ON CONFLICT (id) DO NOTHING;
+        
+        INSERT INTO users (email, password) VALUES 
+        ('test@example.com', '\$2a\$10\$example.hash.here')
+        ON CONFLICT (email) DO NOTHING;
+        "
+        
+        # Verify tables exist
+        echo "Verifying database setup..."
+        PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'menu_items', 'orders', 'payments', 'deliveries');" | grep -c "users\|menu_items\|orders\|payments\|deliveries" | grep -q "5"
+        if [ $? -eq 0 ]; then
+          echo "✅ Database schema created successfully!"
+        else
+          echo "❌ Database schema creation failed!"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "\dt"
+          exit 1
+        fi
     
     # Override database credentials for CI/CD
     - name: Set CI database credentials
@@ -169,6 +224,7 @@ jobs:
     
     - name: Run unit benchmarks
       run: ./benchmark-unit.sh
+
   # ===== BUILD =====
   build:
     name: 'Build Services'
@@ -180,7 +236,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4          
+      uses: actions/checkout@v4
       
     - name: Set up Go
       uses: actions/setup-go@v4
