@@ -1,3 +1,38 @@
+name: CI/CD Pipeline
+
+# Push/PR Triggers (Automatic)
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'services/**'
+      - 'common/**'
+      - 'Makefile'
+      - 'go.mod'
+      - 'go.sum'
+      - 'docker-compose.yml'
+      - 'kong.yml'
+      - 'openapi.yaml'
+      - '.github/workflows/**'
+  
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'services/**'
+      - 'common/**'
+      - 'Makefile'
+      - 'go.mod'
+      - 'go.sum'
+      - 'docker-compose.yml'
+      - 'kong.yml'
+      - 'openapi.yaml'
+      - '.github/workflows/**'
+
+# Environment variables
+env:
+  GO_VERSION: '1.21'
+
 jobs:
   # ===== QUALITY GATES =====
   lint-and-format:
@@ -10,16 +45,15 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: ${{ env.GO_VERSION }}
     
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
-          go-mod-${{ runner.os }}-
+          ${{ runner.os }}-go-
     
     - name: Check Go formatting
       run: |
@@ -66,16 +100,15 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: ${{ env.GO_VERSION }}
     
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
-          go-mod-${{ runner.os }}-
+          ${{ runner.os }}-go-
     
     - name: Generate Protobuf files
       run: make proto-all
@@ -102,16 +135,15 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: ${{ env.GO_VERSION }}
     
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
-          go-mod-${{ runner.os }}-
+          ${{ runner.os }}-go-
     
     - name: Build ${{ matrix.service }}
       run: |
