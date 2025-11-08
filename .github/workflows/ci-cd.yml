@@ -51,7 +51,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
         restore-keys: |
           go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
           go-mod-${{ runner.os }}-
@@ -74,8 +74,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_DB: fooddb
-          POSTGRES_USER: root
-          POSTGRES_PASSWORD: root
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
@@ -107,7 +107,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
         restore-keys: |
           go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
           go-mod-${{ runner.os }}-
@@ -121,11 +121,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y powershell
     
+    - name: Enable memory overcommit for Redis
+      run: sudo sysctl vm.overcommit_memory=1
+    
     - name: Generate Protobuf files
       run: pwsh generate-proto.ps1
     
     - name: Run unit tests
-      run: make test-all
+      run: pwsh test-all-services.ps1
     
     - name: Run unit benchmarks
       run: make benchmark-unit
@@ -152,7 +155,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
         restore-keys: |
           go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
           go-mod-${{ runner.os }}-
