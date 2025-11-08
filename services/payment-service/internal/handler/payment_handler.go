@@ -62,7 +62,7 @@ func (h *PaymentHandler) GetBalance(ctx context.Context, req *proto.GetBalanceRe
 		// Cache in Redis
 		h.redis.Set(ctx, "wallet:"+req.UserId, balance, 0)
 	}
-	
+
 	h.logger.Info("Balance retrieved", zap.String("user_id", req.UserId), zap.Float64("balance", balance))
 	return &proto.GetBalanceResponse{Balance: balance}, nil
 }
@@ -70,19 +70,19 @@ func (h *PaymentHandler) GetBalance(ctx context.Context, req *proto.GetBalanceRe
 func (h *PaymentHandler) Refund(ctx context.Context, req *proto.RefundRequest) (*proto.RefundResponse, error) {
 	// Check if transaction exists (simplified check)
 	userId := "user123" // TODO: Get from transaction lookup
-	
+
 	err := h.repo.Refund(req.TransactionId, req.Amount)
 	if err != nil {
 		h.logger.Error("Refund error", zap.Error(err))
 		return &proto.RefundResponse{Success: false, Error: "Refund failed"}, nil
 	}
-	
+
 	// Update Redis balance
 	newBalance, err := h.redis.IncrByFloat(ctx, "wallet:"+userId, req.Amount).Result()
 	if err != nil {
 		h.logger.Error("Redis update error", zap.Error(err))
 	}
-	
+
 	h.logger.Info("Refund processed", zap.String("transaction_id", req.TransactionId), zap.Float64("amount", req.Amount))
 	return &proto.RefundResponse{Success: true, NewBalance: newBalance}, nil
 }

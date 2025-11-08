@@ -8,9 +8,9 @@ import (
 	"food-delivery-platform/services/delivery-service/internal/handler"
 	"food-delivery-platform/services/delivery-service/internal/proto"
 	"food-delivery-platform/services/delivery-service/internal/repository"
-	"go.uber.org/zap"
-	"github.com/stretchr/testify/suite"
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 )
 
 type DeliveryTestSuite struct {
@@ -26,13 +26,13 @@ func (suite *DeliveryTestSuite) SetupTest() {
 	var err error
 	suite.db, err = sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
 	suite.NoError(err, "Failed to connect to database")
-	
+
 	err = suite.db.Ping()
 	if err != nil {
 		suite.T().Skip("Database not available, skipping tests")
 		return
 	}
-	
+
 	suite.repo = repository.NewDeliveryRepo(suite.db, suite.logger)
 	suite.repo.Init()
 	suite.handler = handler.NewDeliveryHandler(suite.repo, suite.logger)
@@ -49,7 +49,7 @@ func (suite *DeliveryTestSuite) TestDeliveryHandler_AssignDelivery() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	req := &proto.AssignDeliveryRequest{OrderId: "order1"}
 	resp, err := suite.handler.AssignDelivery(context.Background(), req)
 
@@ -62,11 +62,11 @@ func (suite *DeliveryTestSuite) TestDeliveryHandler_UpdateStatus() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	// First assign a delivery
 	assignReq := &proto.AssignDeliveryRequest{OrderId: "order123"}
 	assignResp, _ := suite.handler.AssignDelivery(context.Background(), assignReq)
-	
+
 	req := &proto.UpdateStatusRequest{
 		DeliveryId: assignResp.AgentId,
 		Status:     "picked_up",

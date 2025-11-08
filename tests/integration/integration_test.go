@@ -8,10 +8,10 @@ import (
 	"time"
 
 	authPublic "food-delivery-platform/services/auth-service/public"
-	
-	"go.uber.org/zap"
-	"github.com/stretchr/testify/suite"
+
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 )
 
 // IntegrationTestSuite tests end-to-end service interactions
@@ -36,16 +36,16 @@ func (suite *IntegrationTestSuite) TestAuthService() {
 	req := authPublic.NewRegisterRequest()
 	req.Email = suite.testEmail
 	req.Password = "password123"
-	
+
 	resp, err := suite.authService.Register(context.Background(), req)
 	suite.NoError(err)
 	suite.NotEmpty(resp.Token)
-	
+
 	// Test login
 	loginReq := authPublic.NewLoginRequest()
 	loginReq.Email = suite.testEmail
 	loginReq.Password = "password123"
-	
+
 	loginResp, err := suite.authService.Login(context.Background(), loginReq)
 	suite.NoError(err)
 	suite.NotEmpty(loginResp.Token)
@@ -55,15 +55,15 @@ func BenchmarkAuthService(b *testing.B) {
 	logger, _ := zap.NewDevelopment()
 	db, _ := sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
 	authService := authPublic.NewAuthService(db, logger)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		email := fmt.Sprintf("bench_user_%d_%d@example.com", i, time.Now().UnixNano())
-		
+
 		req := authPublic.NewRegisterRequest()
 		req.Email = email
 		req.Password = "password123"
-		
+
 		resp, err := authService.Register(context.Background(), req)
 		if err != nil || resp.Token == "" {
 			b.Fatalf("Registration failed: %v", err)

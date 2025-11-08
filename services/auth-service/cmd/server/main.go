@@ -11,10 +11,10 @@ import (
 	"syscall"
 	"time"
 
-"food-delivery-platform/services/auth-service/internal/config"
-"food-delivery-platform/services/auth-service/internal/handler"
-"food-delivery-platform/services/auth-service/internal/proto"
-"food-delivery-platform/services/auth-service/internal/repository"
+	"food-delivery-platform/services/auth-service/internal/config"
+	"food-delivery-platform/services/auth-service/internal/handler"
+	"food-delivery-platform/services/auth-service/internal/proto"
+	"food-delivery-platform/services/auth-service/internal/repository"
 
 	_ "github.com/lib/pq"
 	"go.opentelemetry.io/otel"

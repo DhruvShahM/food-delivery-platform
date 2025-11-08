@@ -7,13 +7,13 @@ import (
 )
 
 type Config struct {
-	GRPCPort    string   `mapstructure:"grpc_port"`
-	HTTPPort    string   `mapstructure:"http_port"`
-	DBURL       string   `mapstructure:"db_url"`
-	JWTSecret   string   `mapstructure:"jwt_secret"`
+	GRPCPort     string   `mapstructure:"grpc_port"`
+	HTTPPort     string   `mapstructure:"http_port"`
+	DBURL        string   `mapstructure:"db_url"`
+	JWTSecret    string   `mapstructure:"jwt_secret"`
 	KafkaBrokers []string `mapstructure:"kafka_brokers"`
-	LogLevel    string   `mapstructure:"log_level"`
-	Logger      *zap.Logger
+	LogLevel     string   `mapstructure:"log_level"`
+	Logger       *zap.Logger
 }
 
 func LoadConfig() (*Config, error) {

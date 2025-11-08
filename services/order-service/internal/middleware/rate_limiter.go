@@ -16,27 +16,27 @@ import (
 )
 
 type RateLimiter struct {
-	redis *redis.Client
+	redis  *redis.Client
 	logger *zap.Logger
 }
 
 // HTTP rate limiting config
 type RateLimitConfig struct {
-	Requests int           // Number of requests allowed
-	Window   time.Duration // Time window
+	Requests int                       // Number of requests allowed
+	Window   time.Duration             // Time window
 	KeyFunc  func(*gin.Context) string // Function to generate rate limit key
 }
 
-// gRPC rate limiting config  
+// gRPC rate limiting config
 type GRPCRateLimitConfig struct {
-	Requests int           // Number of requests allowed
-	Window   time.Duration // Time window
+	Requests int                                                 // Number of requests allowed
+	Window   time.Duration                                       // Time window
 	KeyFunc  func(context.Context, *grpc.UnaryServerInfo) string // Function to generate rate limit key
 }
 
 func NewRateLimiter(redis *redis.Client, logger *zap.Logger) *RateLimiter {
 	return &RateLimiter{
-		redis: redis,
+		redis:  redis,
 		logger: logger,
 	}
 }
@@ -46,19 +46,19 @@ func (rl *RateLimiter) Allow(key string, limit int, window time.Duration) (bool,
 	ctx := context.Background()
 	now := time.Now().Unix()
 	windowStart := now - int64(window.Seconds())
-	
+
 	// Clean up old entries and add new entry in a pipeline
 	pipe := rl.redis.Pipeline()
 	pipe.ZRemRangeByScore(ctx, key, "0", fmt.Sprintf("%d", windowStart))
 	pipe.ZAdd(ctx, key, redis.Z{Score: float64(now), Member: fmt.Sprintf("%d", now)})
 	pipe.ZCard(ctx, key)
 	pipe.Expire(ctx, key, window)
-	
+
 	results, err := pipe.Exec(ctx)
 	if err != nil {
 		return false, 0, err
 	}
-	
+
 	count := results[2].(*redis.IntCmd).Val()
 	return count <= int64(limit), int(count), nil
 }
@@ -67,34 +67,34 @@ func (rl *RateLimiter) Allow(key string, limit int, window time.Duration) (bool,
 func (rl *RateLimiter) RateLimitMiddleware(config RateLimitConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := config.KeyFunc(c)
-		
+
 		allowed, currentCount, err := rl.Allow(key, config.Requests, config.Window)
 		if err != nil {
 			rl.logger.Error("Rate limiter error", zap.Error(err))
 			c.Next() // Allow request on error to avoid blocking legitimate traffic
 			return
 		}
-		
+
 		// Set rate limit headers
 		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", config.Requests))
 		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", max(0, config.Requests-currentCount)))
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(config.Window).Unix()))
-		
+
 		if !allowed {
-			rl.logger.Warn("Rate limit exceeded", 
-				zap.String("key", key), 
+			rl.logger.Warn("Rate limit exceeded",
+				zap.String("key", key),
 				zap.Int("current", currentCount),
 				zap.Int("limit", config.Requests))
-			
+
 			c.Header("Retry-After", fmt.Sprintf("%d", int(config.Window.Seconds())))
 			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": "Rate limit exceeded",
+				"error":       "Rate limit exceeded",
 				"retry_after": int(config.Window.Seconds()),
 			})
 			c.Abort()
 			return
 		}
-		
+
 		c.Next()
 	}
 }
@@ -145,7 +145,7 @@ func max(a, b int) int {
 func (rl *RateLimiter) GRPCRateLimitInterceptor(config GRPCRateLimitConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		key := config.KeyFunc(ctx, info)
-		
+
 		allowed, currentCount, err := rl.Allow(key, config.Requests, config.Window)
 		if err != nil {
 			rl.logger.Error("gRPC rate limiter error", zap.Error(err))
@@ -154,12 +154,12 @@ func (rl *RateLimiter) GRPCRateLimitInterceptor(config GRPCRateLimitConfig) grpc
 		}
 
 		if !allowed {
-			rl.logger.Warn("gRPC rate limit exceeded", 
-				zap.String("key", key), 
+			rl.logger.Warn("gRPC rate limit exceeded",
+				zap.String("key", key),
 				zap.Int("current", currentCount),
 				zap.Int("limit", config.Requests),
 				zap.String("method", info.FullMethod))
-			
+
 			return nil, status.Error(codes.ResourceExhausted, "rate limit exceeded")
 		}
 
@@ -177,12 +177,12 @@ func (rl *RateLimiter) GRPCIPRateLimit(requests int, window time.Duration) grpc.
 			if !ok {
 				return "ratelimit:grpc:unknown"
 			}
-			
+
 			peer := md[":authority"]
 			if len(peer) > 0 {
 				return fmt.Sprintf("ratelimit:grpc:ip:%s", peer[0])
 			}
-			
+
 			// Fallback to method-based limiting
 			return fmt.Sprintf("ratelimit:grpc:method:%s", info.FullMethod)
 		},

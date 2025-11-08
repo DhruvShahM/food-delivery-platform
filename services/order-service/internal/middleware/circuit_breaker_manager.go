@@ -60,10 +60,10 @@ func (cbm *CircuitBreakerManager) GetAllBreakers() map[string]map[string]interfa
 	for name, breaker := range cbm.breakers {
 		counts := breaker.GetCounts()
 		result[name] = map[string]interface{}{
-			"state":         breaker.GetState().String(),
-			"requests":      counts.Requests,
-			"total_success": counts.TotalSuccesses,
-			"total_failure": counts.TotalFailures,
+			"state":               breaker.GetState().String(),
+			"requests":            counts.Requests,
+			"total_success":       counts.TotalSuccesses,
+			"total_failure":       counts.TotalFailures,
 			"consecutive_success": counts.ConsecutiveSuccesses,
 			"consecutive_failure": counts.ConsecutiveFailures,
 		}

@@ -17,16 +17,16 @@ import (
 )
 
 type AuthConfig struct {
-	JWTSecret     string
-	RedisClient   *redis.Client
-	TokenExpiry   time.Duration
-	Logger        *zap.Logger
+	JWTSecret   string
+	RedisClient *redis.Client
+	TokenExpiry time.Duration
+	Logger      *zap.Logger
 }
 
 type JWTClaims struct {
-	UserID   string `json:"user_id"`
-	Email    string `json:"email"`
-	Role     string `json:"role"`
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -195,7 +195,7 @@ func (a *AuthService) LogoutHandler() gin.HandlerFunc {
 		}
 
 		tokenString := token.(string)
-		
+
 		// Blacklist the token (assuming standard 24h expiry for simplicity)
 		if err := a.BlacklistToken(tokenString, 24*time.Hour); err != nil {
 			a.config.Logger.Error("Failed to blacklist token", zap.Error(err))

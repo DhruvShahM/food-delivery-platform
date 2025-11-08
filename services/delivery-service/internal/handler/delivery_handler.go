@@ -14,8 +14,8 @@ import (
 
 type DeliveryHandler struct {
 	proto.UnimplementedDeliveryServiceServer
-	repo    *repository.DeliveryRepo
-	logger  *zap.Logger
+	repo   *repository.DeliveryRepo
+	logger *zap.Logger
 }
 
 func NewDeliveryHandler(repo *repository.DeliveryRepo, logger *zap.Logger) *DeliveryHandler {

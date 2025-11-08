@@ -3,9 +3,9 @@ package repository
 import (
 	"database/sql"
 
-	"food-delivery-platform/services/order-service/internal/proto"
-	commonproto "food-delivery-platform/common/proto"
 	"food-delivery-platform/common/pkg/kafka"
+	commonproto "food-delivery-platform/common/proto"
+	"food-delivery-platform/services/order-service/internal/proto"
 	kafkago "github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )

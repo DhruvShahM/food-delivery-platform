@@ -13,12 +13,12 @@ import (
 )
 
 type CircuitBreakerConfig struct {
-	Name          string        // Circuit breaker name
-	MaxRequests   uint32        // Max concurrent requests in half-open state
-	Interval      time.Duration // Reset interval
-	Timeout       time.Duration // Timeout for requests
-	FailureRatio  float64       // Failure threshold (0.0-1.0)
-	Logger        *zap.Logger
+	Name         string        // Circuit breaker name
+	MaxRequests  uint32        // Max concurrent requests in half-open state
+	Interval     time.Duration // Reset interval
+	Timeout      time.Duration // Timeout for requests
+	FailureRatio float64       // Failure threshold (0.0-1.0)
+	Logger       *zap.Logger
 }
 
 type CircuitBreaker struct {

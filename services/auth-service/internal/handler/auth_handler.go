@@ -12,16 +12,16 @@ import (
 
 type AuthHandler struct {
 	proto.UnimplementedAuthServiceServer
-	repo    *repository.UserRepo
-	secret  []byte
-	logger  *zap.Logger
+	repo   *repository.UserRepo
+	secret []byte
+	logger *zap.Logger
 }
 
 func NewAuthHandler(repo *repository.UserRepo, secret string, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
-		repo:    repo,
-		secret:  []byte(secret),
-		logger:  logger,
+		repo:   repo,
+		secret: []byte(secret),
+		logger: logger,
 	}
 }
 

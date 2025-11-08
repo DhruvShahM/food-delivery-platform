@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"testing"
 
+	orderproto "food-delivery-platform/common/proto"
 	"food-delivery-platform/services/order-service/internal/handler"
 	"food-delivery-platform/services/order-service/internal/proto"
 	"food-delivery-platform/services/order-service/internal/repository"
-	orderproto "food-delivery-platform/common/proto"
-	kafkago "github.com/segmentio/kafka-go"
-	"go.uber.org/zap"
-	"github.com/stretchr/testify/suite"
 	_ "github.com/lib/pq"
+	kafkago "github.com/segmentio/kafka-go"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 )
 
 type OrderTestSuite struct {
@@ -30,13 +30,13 @@ func (suite *OrderTestSuite) SetupTest() {
 	var err error
 	suite.db, err = sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
 	suite.NoError(err, "Failed to connect to database")
-	
+
 	err = suite.db.Ping()
 	if err != nil {
 		suite.T().Skip("Database not available, skipping tests")
 		return
 	}
-	
+
 	suite.kafka = kafkago.NewWriter(kafkago.WriterConfig{
 		Brokers: []string{"localhost:9092"},
 		Topic:   "orders",
@@ -60,7 +60,7 @@ func (suite *OrderTestSuite) TestOrderHandler_PlaceOrder() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	req := &proto.PlaceOrderRequest{
 		UserId:       "user1",
 		RestaurantId: "rest1",
@@ -80,21 +80,21 @@ func (suite *OrderTestSuite) TestOrderHandler_GetOrders() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	// Place an order first
 	placeReq := &proto.PlaceOrderRequest{
 		UserId:       "user1",
 		RestaurantId: "rest1",
-		Items: []*orderproto.MenuItem{{Name: "Pizza", Price: 15.99}},
+		Items:        []*orderproto.MenuItem{{Name: "Pizza", Price: 15.99}},
 	}
 	placeResp, _ := suite.handler.PlaceOrder(context.Background(), placeReq)
-	
+
 	req := &proto.GetOrdersRequest{UserId: "user1"}
 	resp, err := suite.handler.GetOrders(context.Background(), req)
 
 	suite.NoError(err)
 	suite.NotEmpty(resp.Orders)
-	
+
 	// Verify the order is in the response
 	found := false
 	for _, order := range resp.Orders {
@@ -112,15 +112,15 @@ func (suite *OrderTestSuite) TestOrderHandler_UpdateStatus() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	// Place an order first
 	placeReq := &proto.PlaceOrderRequest{
 		UserId:       "user1",
 		RestaurantId: "rest1",
-		Items: []*orderproto.MenuItem{{Name: "Pizza", Price: 15.99}},
+		Items:        []*orderproto.MenuItem{{Name: "Pizza", Price: 15.99}},
 	}
 	placeResp, _ := suite.handler.PlaceOrder(context.Background(), placeReq)
-	
+
 	req := &proto.UpdateStatusRequest{
 		OrderId: placeResp.OrderId,
 		Status:  "confirmed",
@@ -129,11 +129,11 @@ func (suite *OrderTestSuite) TestOrderHandler_UpdateStatus() {
 
 	suite.NoError(err)
 	suite.True(resp.Success)
-	
+
 	// Verify status was updated
 	getReq := &proto.GetOrdersRequest{UserId: "user1"}
 	getResp, _ := suite.handler.GetOrders(context.Background(), getReq)
-	
+
 	found := false
 	for _, order := range getResp.Orders {
 		if order.Id == placeResp.OrderId {
@@ -150,7 +150,7 @@ func BenchmarkOrderRepo_GetOrders(b *testing.B) {
 	suite.SetT(&testing.T{})
 	suite.SetupTest()
 	defer suite.TearDownTest()
-	
+
 	// Create test data
 	userID := "bench_user"
 	for i := 0; i < 10; i++ {
@@ -162,7 +162,7 @@ func BenchmarkOrderRepo_GetOrders(b *testing.B) {
 			b.Fatalf("Failed to create test order: %v", err)
 		}
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		orders, err := suite.repo.GetOrdersByUserID(userID)

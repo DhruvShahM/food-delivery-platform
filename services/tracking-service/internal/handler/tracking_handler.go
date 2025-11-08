@@ -5,16 +5,16 @@ import (
 	"math/rand"
 	"time"
 
+	commonproto "food-delivery-platform/common/proto"
 	"food-delivery-platform/services/tracking-service/internal/proto"
 	"food-delivery-platform/services/tracking-service/internal/repository"
-	commonproto "food-delivery-platform/common/proto"
 	"go.uber.org/zap"
 )
 
 type TrackingHandler struct {
 	proto.UnimplementedTrackingServiceServer
-	repo    *repository.TrackingRepo
-	logger  *zap.Logger
+	repo   *repository.TrackingRepo
+	logger *zap.Logger
 }
 
 func NewTrackingHandler(repo *repository.TrackingRepo, logger *zap.Logger) *TrackingHandler {

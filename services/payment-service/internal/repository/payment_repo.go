@@ -54,8 +54,8 @@ func (r *PaymentRepo) Refund(transactionId string, amount float64) error {
 	// For simplicity, we'll insert a negative payment record
 	// In a real system, you'd update the original transaction
 	userId := "user123" // TODO: Get from transaction lookup
-	
-	_, err := r.db.Exec("INSERT INTO payments (user_id, amount, status, transaction_id) VALUES ($1, $2, 'refunded', $3)", 
+
+	_, err := r.db.Exec("INSERT INTO payments (user_id, amount, status, transaction_id) VALUES ($1, $2, 'refunded', $3)",
 		userId, -amount, transactionId)
 	if err != nil {
 		r.logger.Error("Refund error", zap.Error(err))

@@ -57,8 +57,8 @@ func main() {
 	}
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:                  cfg.RedisURL,
-		DisableIndentity:      true, // This disables maint_notifications
+		Addr:             cfg.RedisURL,
+		DisableIndentity: true, // This disables maint_notifications
 	})
 
 	repo := repository.NewPaymentRepo(db, cfg.Logger)

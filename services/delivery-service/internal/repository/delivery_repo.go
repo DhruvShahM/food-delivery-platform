@@ -6,6 +6,7 @@ import (
 	"food-delivery-platform/services/delivery-service/internal/proto"
 	"go.uber.org/zap"
 )
+
 type DeliveryRepo struct {
 	db     *sql.DB
 	logger *zap.Logger

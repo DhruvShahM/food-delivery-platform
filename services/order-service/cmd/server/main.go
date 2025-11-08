@@ -140,8 +140,8 @@ func main() {
 		grpc.ChainUnaryInterceptor(
 			otelgrpc.UnaryServerInterceptor(),
 			rateLimiter.GRPCIPRateLimit(1000, time.Minute), // 1000 requests per minute per IP
-			authService.GRPCAuthInterceptor(),               // Require authentication for all gRPC calls
-			rateLimiter.GRPCUserRateLimit(5000, time.Hour),  // 5000 requests per hour per user
+			authService.GRPCAuthInterceptor(),              // Require authentication for all gRPC calls
+			rateLimiter.GRPCUserRateLimit(5000, time.Hour), // 5000 requests per hour per user
 			// Add circuit breaker interceptor (applied to all methods)
 			authCB.GRPCCircuitBreakerInterceptor(),
 		),
@@ -160,7 +160,7 @@ func main() {
 	// Setup Gin with middleware
 	r := gin.Default()
 	r.Use(handler.CORS())
-	
+
 	// Apply global rate limiting (100 requests per minute per IP)
 	r.Use(rateLimiter.IPRateLimit(100, time.Minute))
 
@@ -195,7 +195,7 @@ func main() {
 
 	// Protected API endpoints
 	api := r.Group("/api/v1")
-	api.Use(authService.JWTMiddleware()) // Require authentication
+	api.Use(authService.JWTMiddleware())                // Require authentication
 	api.Use(rateLimiter.UserRateLimit(1000, time.Hour)) // 1000 requests per hour per user
 	{
 		// Apply stricter rate limiting to sensitive endpoints

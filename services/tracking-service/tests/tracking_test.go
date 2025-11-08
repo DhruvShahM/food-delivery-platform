@@ -5,19 +5,19 @@ import (
 	"io"
 	"testing"
 
+	commonproto "food-delivery-platform/common/proto"
 	"food-delivery-platform/services/tracking-service/internal/handler"
 	"food-delivery-platform/services/tracking-service/internal/proto"
 	"food-delivery-platform/services/tracking-service/internal/repository"
-	commonproto "food-delivery-platform/common/proto"
-	"go.uber.org/zap"
-	"github.com/stretchr/testify/suite"
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 )
 
 // MockStream for testing streaming
 type MockTrackingStream struct {
-	proto.TrackingService_TrackDeliveryServer  // Changed from handler.TrackingService_TrackDeliveryServer
-	updates []*commonproto.Location
+	proto.TrackingService_TrackDeliveryServer // Changed from handler.TrackingService_TrackDeliveryServer
+	updates                                   []*commonproto.Location
 }
 
 func (m *MockTrackingStream) Send(location *commonproto.Location) error {
@@ -31,7 +31,7 @@ func (m *MockTrackingStream) Context() context.Context {
 
 // Mock stream for SendLocation
 type MockSendLocationStream struct {
-	proto.TrackingService_SendLocationServer  // Changed from handler.TrackingService_SendLocationServer
+	proto.TrackingService_SendLocationServer // Changed from handler.TrackingService_SendLocationServer
 }
 
 func (m *MockSendLocationStream) Recv() (*commonproto.Location, error) {
@@ -62,7 +62,7 @@ func (suite *TrackingTestSuite) SetupTest() {
 
 func (suite *TrackingTestSuite) TestTrackingHandler_TrackDelivery() {
 	stream := &MockTrackingStream{}
-	
+
 	req := &proto.TrackDeliveryRequest{OrderId: "order123"}
 	err := suite.handler.TrackDelivery(req, stream)
 
@@ -72,9 +72,9 @@ func (suite *TrackingTestSuite) TestTrackingHandler_TrackDelivery() {
 
 func (suite *TrackingTestSuite) TestTrackingHandler_SendLocation() {
 	stream := &MockSendLocationStream{}
-	
+
 	err := suite.handler.SendLocation(stream)
-	
+
 	suite.NoError(err)
 	// In a real implementation, this would handle location updates from client
 }

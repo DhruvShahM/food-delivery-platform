@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	commonproto "food-delivery-platform/common/proto"
 	"food-delivery-platform/services/order-service/internal/middleware"
 	"food-delivery-platform/services/order-service/internal/proto"
 	"food-delivery-platform/services/order-service/internal/repository"
-	commonproto "food-delivery-platform/common/proto"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -18,8 +18,8 @@ import (
 
 type OrderHandler struct {
 	proto.UnimplementedOrderServiceServer
-	repo    *repository.OrderRepo
-	logger  *zap.Logger
+	repo   *repository.OrderRepo
+	logger *zap.Logger
 }
 
 func NewOrderHandler(repo *repository.OrderRepo, logger *zap.Logger) *OrderHandler {
@@ -43,12 +43,12 @@ func (h *OrderHandler) PlaceOrder(ctx context.Context, req *proto.PlaceOrderRequ
 
 	// Publish Kafka event
 	evt := &commonproto.OrderEvent{
-		OrderId:       orderID,
-		UserId:        req.UserId,
-		RestaurantId:  req.RestaurantId,
-		Status:        "created",
-		Amount:        amount,
-		Timestamp:     time.Now().Format(time.RFC3339),
+		OrderId:      orderID,
+		UserId:       req.UserId,
+		RestaurantId: req.RestaurantId,
+		Status:       "created",
+		Amount:       amount,
+		Timestamp:    time.Now().Format(time.RFC3339),
 	}
 	h.repo.PublishEvent(evt)
 
@@ -93,8 +93,8 @@ func (h *OrderHandler) UpdateStatus(ctx context.Context, req *proto.UpdateStatus
 // HTTP Handlers for REST API endpoints
 func (h *OrderHandler) PlaceOrderHTTP(c *gin.Context) {
 	var req struct {
-		UserID       string                   `json:"user_id" binding:"required"`
-		RestaurantID string                   `json:"restaurant_id" binding:"required"`
+		UserID       string                 `json:"user_id" binding:"required"`
+		RestaurantID string                 `json:"restaurant_id" binding:"required"`
 		Items        []commonproto.MenuItem `json:"items" binding:"required"`
 	}
 
@@ -118,12 +118,12 @@ func (h *OrderHandler) PlaceOrderHTTP(c *gin.Context) {
 
 	// Publish Kafka event
 	evt := &commonproto.OrderEvent{
-		OrderId:       orderID,
-		UserId:        req.UserID,
-		RestaurantId:  req.RestaurantID,
-		Status:        "created",
-		Amount:        amount,
-		Timestamp:     time.Now().Format(time.RFC3339),
+		OrderId:      orderID,
+		UserId:       req.UserID,
+		RestaurantId: req.RestaurantID,
+		Status:       "created",
+		Amount:       amount,
+		Timestamp:    time.Now().Format(time.RFC3339),
 	}
 	h.repo.PublishEvent(evt)
 

@@ -15,9 +15,9 @@ import (
 
 type RestaurantHandler struct {
 	proto.UnimplementedRestaurantServiceServer
-	repo       *repository.MenuRepo
-	redis      *redis.Client
-	logger     *zap.Logger
+	repo   *repository.MenuRepo
+	redis  *redis.Client
+	logger *zap.Logger
 }
 
 func NewRestaurantHandler(repo *repository.MenuRepo, redis *redis.Client, logger *zap.Logger) *RestaurantHandler {

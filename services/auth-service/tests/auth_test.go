@@ -10,10 +10,10 @@ import (
 	"food-delivery-platform/services/auth-service/internal/handler"
 	"food-delivery-platform/services/auth-service/internal/proto"
 	"food-delivery-platform/services/auth-service/internal/repository"
-	"go.uber.org/zap"
-	"github.com/stretchr/testify/suite"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 )
 
 type AuthTestSuite struct {
@@ -29,13 +29,13 @@ func (suite *AuthTestSuite) SetupTest() {
 	var err error
 	suite.db, err = sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
 	suite.NoError(err, "Failed to connect to database")
-	
+
 	err = suite.db.Ping()
 	if err != nil {
 		suite.T().Skip("Database not available, skipping tests")
 		return
 	}
-	
+
 	suite.repo = repository.NewUserRepo(suite.db, suite.logger)
 	// Don't call Init() here to avoid conflicts between tests
 	suite.handler = handler.NewAuthHandler(suite.repo, "testsecret", suite.logger)
@@ -54,7 +54,7 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_Success() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	// Create unique test user for this test
 	testEmail := fmt.Sprintf("test_success_%d@test.com", time.Now().UnixNano())
 	err := suite.repo.CreateUser(testEmail, "password")
@@ -66,7 +66,7 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_Success() {
 	suite.NoError(err)
 	suite.Empty(resp.Error)
 	suite.NotEmpty(resp.Token)
-	
+
 	token, err := jwt.Parse(resp.Token, func(token *jwt.Token) (interface{}, error) {
 		return []byte("testsecret"), nil
 	})
@@ -79,7 +79,7 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_InvalidPassword() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	testEmail := fmt.Sprintf("test_invalid_%d@test.com", time.Now().UnixNano())
 	err := suite.repo.CreateUser(testEmail, "password")
 	suite.NoError(err)
@@ -97,7 +97,7 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_UserNotFound() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	req := &proto.LoginRequest{Email: "nonexistent@test.com", Password: "password"}
 	resp, err := suite.handler.Login(context.Background(), req)
 
@@ -111,7 +111,7 @@ func (suite *AuthTestSuite) TestAuthHandler_Register_Success() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	testEmail := fmt.Sprintf("register_success_%d@test.com", time.Now().UnixNano())
 	req := &proto.RegisterRequest{
 		Email:    testEmail,
@@ -129,7 +129,7 @@ func (suite *AuthTestSuite) TestAuthHandler_Register_DuplicateEmail() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	testEmail := fmt.Sprintf("duplicate_%d@test.com", time.Now().UnixNano())
 	err := suite.repo.CreateUser(testEmail, "password")
 	suite.NoError(err)
@@ -150,7 +150,7 @@ func (suite *AuthTestSuite) TestUserRepo_GetUserByEmail() {
 		suite.T().Skip("Database not available")
 		return
 	}
-	
+
 	testEmail := fmt.Sprintf("repo_test_%d@test.com", time.Now().UnixNano())
 	err := suite.repo.CreateUser(testEmail, "pass")
 	suite.NoError(err)
