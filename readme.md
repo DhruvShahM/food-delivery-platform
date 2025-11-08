@@ -24,5 +24,3 @@ Microservices-based food delivery app with gRPC, Kafka, OTEL, Prometheus, Grafan
 
 ## Tech
 Go 1.21, gRPC, Kafka, Postgres, Redis, Gin, OTEL, Zap. 
-
-Demo changes
