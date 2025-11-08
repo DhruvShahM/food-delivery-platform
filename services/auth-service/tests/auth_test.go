@@ -112,8 +112,8 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_InvalidPassword() {
 
 	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
 	resp, err := suite.handler.Login(context.Background(), req)
-	suite.NoError(err) // No Go error expected
-	suite.Empty(resp.Token) // Should be empty on error
+	suite.NoError(err)         // No Go error expected
+	suite.Empty(resp.Token)    // Should be empty on error
 	suite.NotEmpty(resp.Error) // Error message should be present
 	suite.Contains(resp.Error, "Invalid credentials")
 }
@@ -132,8 +132,8 @@ func (suite *AuthTestSuite) TestAuthHandler_Login_UserNotFound() {
 
 	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
 	resp, err := suite.handler.Login(context.Background(), req)
-	suite.NoError(err) // No Go error expected
-	suite.Empty(resp.Token) // Should be empty on error
+	suite.NoError(err)         // No Go error expected
+	suite.Empty(resp.Token)    // Should be empty on error
 	suite.NotEmpty(resp.Error) // Error message should be present
 	suite.Contains(resp.Error, "Invalid credentials")
 }
@@ -182,8 +182,8 @@ func (suite *AuthTestSuite) TestAuthHandler_Register_DuplicateEmail() {
 
 	suite.handler = handler.NewAuthHandler(suite.repo, "test-secret", suite.logger)
 	resp, err := suite.handler.Register(context.Background(), req)
-	suite.NoError(err) // No Go error expected
-	suite.Empty(resp.Token) // Should be empty on error
+	suite.NoError(err)         // No Go error expected
+	suite.Empty(resp.Token)    // Should be empty on error
 	suite.NotEmpty(resp.Error) // Error message should be present
 	suite.Contains(resp.Error, "User already exists")
 }
