@@ -132,9 +132,25 @@ jobs:
       run: sudo sysctl vm.overcommit_memory=1
     
     # Set up database schema
-    - name: Set up test database schema
-      run: |
-        PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -f scripts/init-db.sql
+# Set up database schema
+  - name: Set up test database schema
+    run: |
+      echo "Setting up database schema..."
+      PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -f scripts/init-db.sql -v ON_ERROR_STOP=1
+      if [ $? -ne 0 ]; then
+        echo "Database schema setup failed!"
+        exit 1
+      fi
+      
+      # Verify tables were created
+      PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "\dt" | grep -E "(users|menu_items|orders|payments|deliveries)"
+      if [ $? -ne 0 ]; then
+        echo "Tables were not created successfully!"
+        PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "\dt"
+        exit 1
+      fi
+      
+      echo "Database schema setup completed successfully!"
     
     # Override database credentials for CI/CD
     - name: Set CI database credentials
