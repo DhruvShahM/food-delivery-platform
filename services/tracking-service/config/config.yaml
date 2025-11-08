@@ -1,0 +1,4 @@
+grpc_port: ":50056"
+http_port: ":8086"
+db_url: "postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+log_level: "info"

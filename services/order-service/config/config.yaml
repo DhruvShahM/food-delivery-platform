@@ -1,0 +1,27 @@
+grpc_port: ":50052"  # Changed from 50053 to avoid conflict with payment-service
+http_port: ":8082"
+db_url: "postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+redis_url: "localhost:6379"
+jwt_secret: "your-secret-key-change-in-production"
+kafka_brokers: ["localhost:9092"]
+kafka_topic: "order-events"
+log_level: "info"
+
+circuit_breaker:
+  default_failure_ratio: 0.5
+  default_timeout: 30s
+  default_interval: 60s
+  default_max_requests: 3
+
+# Service-specific overrides
+auth_service:
+  circuit_breaker:
+    failure_ratio: 0.3
+    timeout: 10s
+    interval: 30s
+
+payment_service:
+  circuit_breaker:
+    failure_ratio: 0.2  # More sensitive for payments
+    timeout: 5s
+    interval: 20s

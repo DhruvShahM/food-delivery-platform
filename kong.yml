@@ -1,0 +1,160 @@
+_format_version: "3.0"
+
+services:
+  - name: order-service
+    url: http://order-service:8082
+    routes:
+      - name: auth-login
+        paths:
+          - /auth/login
+        methods:
+          - POST
+        strip_path: false
+      
+      - name: auth-register
+        paths:
+          - /auth/register
+        methods:
+          - POST
+        strip_path: false
+      
+      - name: auth-logout
+        paths:
+          - /auth/logout
+        methods:
+          - POST
+        strip_path: false
+
+      - name: order-api
+        paths:
+          - /api/v1/orders
+        methods:
+          - GET
+          - POST
+          - PUT
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              secret_is_base64: false
+      
+      - name: order-health
+        paths:
+          - /health
+        methods:
+          - GET
+        strip_path: false
+      
+      - name: order-metrics
+        paths:
+          - /metrics
+        methods:
+          - GET
+        strip_path: false
+      
+      - name: circuit-breakers
+        paths:
+          - /circuit-breakers
+        methods:
+          - GET
+        strip_path: false
+
+  - name: payment-service
+    url: http://payment-service:8083
+    routes:
+      - name: payment-api
+        paths:
+          - /api/v1/payments
+        methods:
+          - GET
+          - POST
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              secret_is_base64: false
+
+  - name: delivery-service
+    url: http://delivery-service:8084
+    routes:
+      - name: delivery-api
+        paths:
+          - /api/v1/deliveries
+        methods:
+          - GET
+          - POST
+          - PUT
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              secret_is_base64: false
+
+  - name: restaurant-service
+    url: http://restaurant-service:8085
+    routes:
+      - name: restaurant-api
+        paths:
+          - /api/v1/restaurants
+        methods:
+          - GET
+          - POST
+          - PUT
+        strip_path: false
+
+  - name: tracking-service
+    url: http://tracking-service:8086
+    routes:
+      - name: tracking-api
+        paths:
+          - /api/v1/tracking
+        methods:
+          - GET
+          - POST
+        strip_path: false
+
+  - name: swagger-ui
+    url: http://swagger-ui:8080
+    routes:
+      - name: api-docs
+        paths:
+          - /docs
+        methods:
+          - GET
+        strip_path: false
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - http://localhost:3000
+        - http://localhost:8080
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - Authorization
+      credentials: true
+
+consumers:
+  - username: admin
+    custom_id: admin-user

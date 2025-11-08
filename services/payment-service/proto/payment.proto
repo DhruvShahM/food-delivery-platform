@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "food-delivery-platform/services/payment-service/internal/proto";
+
+import "common.proto";
+
+service PaymentService {
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  rpc Refund(RefundRequest) returns (RefundResponse);
+}
+
+message ProcessPaymentRequest {
+  string order_id = 1;
+  double amount = 2;
+}
+
+message ProcessPaymentResponse {
+  string payment_id = 1;
+  string status = 2;
+  string error = 3;
+}
+
+message GetBalanceRequest {
+  string user_id = 1;
+}
+
+message GetBalanceResponse {
+  double balance = 1;
+  string error = 2;
+}
+
+message RefundRequest {
+  string transaction_id = 1;
+  double amount = 2;
+}
+
+message RefundResponse {
+  bool success = 1;
+  double new_balance = 2;
+  string error = 3;
+}

@@ -1,0 +1,51 @@
+{
+  "dashboard": {
+    "title": "Food Delivery Performance",
+    "panels": [
+      {
+        "title": "Request Rate by Service",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{service}}"
+          }
+        ]
+      },
+      {
+        "title": "Response Time Percentiles",
+        "type": "graph", 
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))", 
+            "legendFormat": "50th percentile"
+          }
+        ]
+      },
+      {
+        "title": "Circuit Breaker States",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "circuit_breaker_state{state=\"open\"}",
+            "legendFormat": "Open Breakers"
+          }
+        ]
+      },
+      {
+        "title": "Rate Limiting",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(rate_limit_exceeded_total[5m])",
+            "legendFormat": "Rate Limit Exceeded"
+          }
+        ]
+      }
+    ]
+  }
+}

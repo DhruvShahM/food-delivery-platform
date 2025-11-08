@@ -1,0 +1,6 @@
+grpc_port: ":50051"
+http_port: ":8080"
+db_url: "postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+kafka_brokers: ["localhost:9092"]
+log_level: "info"
+jwt_secret: "supersecretkey"

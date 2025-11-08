@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "internal/proto";
+
+import "common.proto";
+
+service OrderService {
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+  rpc GetOrders(GetOrdersRequest) returns (GetOrdersResponse);
+  rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse);
+}
+
+message PlaceOrderRequest {
+  string user_id = 1;
+  string restaurant_id = 2;
+  repeated common.MenuItem items = 3;
+}
+
+message PlaceOrderResponse {
+  string order_id = 1;
+  string error = 2;
+}
+
+message GetOrdersRequest {
+  string user_id = 1;
+}
+
+message GetOrdersResponse {
+  repeated Order orders = 1;
+}
+
+message UpdateStatusRequest {
+  string order_id = 1;
+  string status = 2;
+}
+
+message UpdateStatusResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message Order {
+  string id = 1;
+  string user_id = 2;
+  string restaurant_id = 3;
+  double amount = 4;
+  string status = 5;
+}

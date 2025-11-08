@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package delivery;
+
+option go_package = "food-delivery-platform/services/delivery-service/internal/proto";
+
+import "common.proto";
+
+service DeliveryService {
+  rpc AssignDelivery(AssignDeliveryRequest) returns (AssignDeliveryResponse);
+  rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse);
+  rpc GetDeliveries(GetDeliveriesRequest) returns (GetDeliveriesResponse);
+}
+
+message AssignDeliveryRequest {
+  string order_id = 1;
+}
+
+message AssignDeliveryResponse {
+  string agent_id = 1;
+  string error = 2;
+}
+
+message UpdateStatusRequest {
+  string delivery_id = 1;
+  string status = 2;
+}
+
+message UpdateStatusResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message GetDeliveriesRequest {
+  string agent_id = 1;
+}
+
+message GetDeliveriesResponse {
+  repeated Delivery deliveries = 1;
+}
+
+message Delivery {
+  string id = 1;
+  string order_id = 2;
+  string agent_id = 3;
+  string status = 4;
+}

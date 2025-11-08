@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-11-07T17:12:44.134Z",
+  "summary": {
+    "totalRequests": 75817,
+    "successRate": "100.0",
+    "avgResponseTime": 24,
+    "p95ResponseTime": 3,
+    "requestRate": 200
+  },
+  "errors": {
+    "503 Service Unavailable": 41605,
+    "401 Unauthorized": 30318,
+    "500 Server Error": 3872,
+    "Timeout": 22,
+    "Invalid URL": 6419
+  },
+  "assessment": {
+    "responseTime": "EXCELLENT",
+    "throughput": "EXCELLENT",
+    "reliability": "EXCELLENT"
+  }
+}

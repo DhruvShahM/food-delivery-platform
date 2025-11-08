@@ -1,0 +1,6 @@
+grpc_port: ":50054"
+http_port: ":8084"
+db_url: "postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+kafka_brokers: ["localhost:9092"]
+kafka_topic: "order-created"
+log_level: "info"

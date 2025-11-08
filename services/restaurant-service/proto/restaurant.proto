@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package restaurant;
+
+option go_package = "food-delivery-platform/services/restaurant-service/internal/proto";
+
+import "common.proto";
+
+service RestaurantService {
+  rpc GetMenu(GetMenuRequest) returns (GetMenuResponse);
+  rpc UpdateAvailability(UpdateAvailabilityRequest) returns (UpdateAvailabilityResponse);
+  rpc CreateMenuItem(CreateMenuItemRequest) returns (CreateMenuItemResponse);
+}
+
+message GetMenuRequest {
+  string restaurant_id = 1;
+}
+
+message GetMenuResponse {
+  repeated common.MenuItem items = 1;
+  string error = 2;
+}
+
+message UpdateAvailabilityRequest {
+  string item_id = 1;
+  bool available = 2;
+}
+
+message UpdateAvailabilityResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message CreateMenuItemRequest {
+  string restaurant_id = 1;
+  string name = 2;
+  double price = 3;
+}
+
+message CreateMenuItemResponse {
+  string item_id = 1;
+  string error = 2;
+}

@@ -1,0 +1,47 @@
+config:
+  target: 'http://localhost:8000'  # API Gateway
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 300  
+      arrivalRate: 50
+      name: "Load testing"
+    - duration: 60
+      arrivalRate: 100
+      name: "Stress testing"
+
+scenarios:
+  - name: "Complete Order Flow"
+    weight: 70
+    flow:
+      - post:
+          url: "/auth/register"  # Fixed: removed /api/v1/auth/
+          json:
+            email: "user_{{ $randomInt }}@test.com"
+            password: "password123"
+      - post:
+          url: "/auth/login"     # Fixed: removed /api/v1/auth/
+          json:
+            email: "user_{{ $randomInt }}@test.com"
+            password: "password123"
+      - get:
+          url: "/api/v1/restaurants?restaurant_id=rest1"  # Fixed: restaurants plural
+      - post:
+          url: "/api/v1/orders"   # Fixed: orders plural, using Kong route
+          headers:
+            Authorization: "Bearer {{ token }}"  # Will need to extract from login
+          json:
+            user_id: "user_{{ $randomInt }}"
+            restaurant_id: "rest1"
+            items: [{"name": "Pizza", "price": 19.99}]
+      - get:
+          url: "/api/v1/orders?user_id=user_{{ $randomInt }}"  # Fixed: orders plural
+          headers:
+            Authorization: "Bearer {{ token }}"
+
+  - name: "Restaurant Menu Browsing"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/v1/restaurants?restaurant_id=rest{{ $randomInt(1, 10) }}"

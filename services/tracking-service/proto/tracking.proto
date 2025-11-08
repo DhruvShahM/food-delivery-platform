@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package tracking;
+
+option go_package = "internal/proto";
+
+import "common.proto";
+
+service TrackingService {
+  rpc TrackDelivery(TrackDeliveryRequest) returns (stream common.Location);
+  rpc SendLocation(stream common.Location) returns (TrackingResponse);
+}
+
+message TrackDeliveryRequest {
+  string order_id = 1;
+}
+
+message TrackingResponse {
+  string message = 1;
+}

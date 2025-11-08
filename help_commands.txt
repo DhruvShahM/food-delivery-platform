@@ -1,0 +1,255 @@
+Method 1: Using go run (Recommended)
+Navigate to each service directory and run:
+1. Auth Service
+cd services/auth-servicego run cmd/server/main.go
+gRPC Port: :50051
+HTTP Port: :8080
+2. Restaurant Service
+cd services/restaurant-service go run cmd/server/main.go
+gRPC Port: :50052
+HTTP Port: :8081
+3. Order Service
+cd services/order-servicego run cmd/server/main.go
+gRPC Port: :50053
+HTTP Port: :8082
+4. Delivery Service
+cd services/delivery-service go run cmd/server/main.go
+gRPC Port: :50054
+HTTP Port: :8083
+5. Payment Service
+cd services/payment-service go run cmd/server/main.go
+gRPC Port: :50055
+HTTP Port: :8084
+6. Tracking Service
+cd services/tracking-servicego run cmd/server/main.go
+gRPC Port: :50056
+HTTP Port: :8085
+Method 2: Build and Run (If you've built binaries)
+If you've run make build-all, you can run the binaries directly:
+cd services/auth-service.\bin\server.exe
+Method 3: From Root Directory (Using Full Path)
+You can also run from the root directory:
+# From project rootgo run services/auth-service/cmd/server/main.go
+Service Ports Summary
+Service	gRPC Port	HTTP Port
+Auth	50051	8080
+Restaurant	50052	8081
+Order	50053	8082
+Delivery	50054	8083
+Payment	50055	8084
+Tracking	50056	8085
+Quick Test Commands
+
+netstat -ano | findstr :50052
+  TCP    0.0.0.0:50052          0.0.0.0:0              LISTENING       20540
+  TCP    [::]:50052             [::]:0                 LISTENING       20540
+
+  taskkill /F /PID 20540
+
+
+
+  Unit testing all commands:
+
+  [2 tools called]
+
+Based on your project setup, here are the various ways to run unit tests using commands:
+
+## 1. Using PowerShell Script (Recommended)
+
+```powershell
+# Run all service tests
+.\test-all-services.ps1
+
+# Or using the Makefile
+make test-all
+```
+
+## 2. Individual Service Testing
+
+### Run tests for a specific service:
+```bash
+# Auth Service
+cd services/auth-service
+go test ./tests/... -v
+
+# Order Service  
+cd services/order-service
+go test ./tests/... -v
+
+# Payment Service
+cd services/payment-service
+go test ./tests/... -v
+
+# Restaurant Service
+cd services/restaurant-service
+go test ./tests/... -v
+
+# Delivery Service
+cd services/delivery-service
+go test ./tests/... -v
+
+# Tracking Service
+cd services/tracking-service
+go test ./tests/... -v
+```
+
+## 3. Run Specific Test Functions
+
+```bash
+# Run a specific test function
+go test -run TestAuthHandler_Login_Success ./tests/... -v
+
+# Run tests matching a pattern
+go test -run "Test.*Login.*" ./tests/... -v
+
+# Run all tests in a specific test suite
+go test -run "TestAuthTestSuite" ./tests/... -v
+```
+
+## 4. Advanced Go Test Options
+
+### Coverage Testing:
+```bash
+# Generate coverage report for a service
+cd services/auth-service
+go test ./tests/... -cover -coverprofile=coverage.out
+go tool cover -html=coverage.out
+
+# Coverage with detailed output
+go test ./tests/... -cover -v
+
+# Coverage for all packages
+go test ./... -cover
+```
+
+### Race Detection:
+```bash
+# Run tests with race detection
+go test ./tests/... -race -v
+```
+
+### Benchmark Testing:
+```bash
+# Run benchmarks
+go test ./tests/... -bench=. -benchmem
+
+# Run specific benchmark
+go test -bench=BenchmarkHandler -benchmem ./tests/...
+```
+
+### Verbose Output with Details:
+```bash
+# Detailed test output
+go test ./tests/... -v
+
+# Show test execution time
+go test ./tests/... -v -timeout=30s
+```
+
+## 5. Integration Tests
+
+```bash
+# Run only integration tests (skip unit tests)
+go test ./tests/integration/... -v
+
+# Run integration tests with race detection
+go test ./tests/integration/... -race -v
+
+# Run integration tests in short mode (if you add build tags)
+go test -short ./tests/integration/... -v
+```
+
+## 6. Parallel Testing
+
+```bash
+# Run tests in parallel (default is GOMAXPROCS)
+go test ./tests/... -parallel=4 -v
+
+# Run package tests in parallel
+go test -p=4 ./...
+```
+
+## 7. Testing with Build Tags
+
+If you want to separate unit and integration tests using build tags:
+
+```bash
+# Add build tags to integration tests:
+// +build integration
+
+package integration
+
+# Then run:
+# Unit tests only
+go test ./... -v
+
+# Integration tests only  
+go test -tags=integration ./tests/integration/... -v
+```
+
+## 8. Testing with Environment Variables
+
+```bash
+# Set environment variables for testing
+export TEST_DB_URL="postgres://test:test@localhost:5432/testdb"
+export REDIS_URL="redis://localhost:6379"
+go test ./tests/... -v
+```
+
+## 9. Continuous Integration Commands
+
+```bash
+# Run tests and fail fast on first error
+go test ./tests/... -failfast -v
+
+# Generate JUnit XML output (requires gotestsum)
+go install gotest.tools/gotestsum@latest
+gotestsum --junitfile results.xml ./tests/...
+
+# Run tests with JSON output
+go test ./tests/... -json | jq .
+```
+
+## 10. Docker-based Testing
+
+If you want to run tests in containers:
+
+```bash
+# Run tests in Docker (if you have Docker setup)
+docker run --rm -v $(pwd):/app -w /app golang:1.21 go test ./tests/...
+
+# Or use docker-compose for testing environment
+docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+```
+
+## Quick Test Commands Reference:
+
+```bash
+# Basic test run
+go test ./tests/... -v
+
+# Coverage report
+go test ./tests/... -cover -v
+
+# Race detection
+go test ./tests/... -race -v
+
+# Specific test
+go test -run TestName ./tests/... -v
+
+# Integration tests
+go test ./tests/integration/... -v
+
+# All services via script
+.\test-all-services.ps1
+```
+
+## Prerequisites for Running Tests:
+
+Make sure you have:
+1. PostgreSQL running on `localhost:5432` with database `fooddb`
+2. Redis running on `localhost:6379`
+3. Kafka running on `localhost:9092`
+4. All required Go modules installed: `go mod download`
+
+The easiest way to run all tests is using the PowerShell script or Makefile command you already have set up!

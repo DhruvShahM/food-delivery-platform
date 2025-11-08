@@ -1,0 +1,845 @@
+openapi: 3.0.3
+info:
+  title: Food Delivery Platform API
+  description: |-
+    A comprehensive food delivery platform with microservices architecture.
+    
+    ## Services Overview
+    - **Auth Service**: User authentication and authorization
+    - **Order Service**: Order management and lifecycle
+    - **Payment Service**: Payment processing and wallet management
+    - **Restaurant Service**: Menu management and restaurant operations
+    - **Delivery Service**: Delivery assignment and tracking
+    - **Tracking Service**: Real-time location tracking
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+  version: 1.0.0
+  contact:
+    name: Food Delivery Platform Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Kong API Gateway (Development)
+  - url: https://api.fooddelivery.com
+    description: Production API Gateway
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+        '401':
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      description: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: password123
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User registered successfully
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request or user already exists
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate the current session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          description: Unauthorized
+
+  # Order Management Endpoints
+  /api/v1/orders:
+    post:
+      tags:
+        - Orders
+      summary: Place a new order
+      description: Create a new food order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - restaurant_id
+                - items
+              properties:
+                user_id:
+                  type: string
+                  example: user123
+                restaurant_id:
+                  type: string
+                  example: rest456
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MenuItem'
+                  minItems: 1
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_id:
+                    type: string
+                    example: order_1640995200000000000
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+    get:
+      tags:
+        - Orders
+      summary: Get user orders
+      description: Retrieve all orders for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized
+
+  /api/v1/orders/{orderId}/status:
+    put:
+      tags:
+        - Orders
+      summary: Update order status
+      description: Update the status of an existing order (Admin/Restaurant only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: order_1640995200000000000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, preparing, ready, picked_up, delivered, cancelled]
+                  example: confirmed
+      responses:
+        '200':
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - insufficient permissions
+        '404':
+          description: Order not found
+
+  # Payment Endpoints
+  /api/v1/payments:
+    post:
+      tags:
+        - Payments
+      summary: Process payment
+      description: Process payment for an order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - order_id
+                - amount
+              properties:
+                order_id:
+                  type: string
+                  example: order_1640995200000000000
+                amount:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  example: 25.99
+      responses:
+        '200':
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_id:
+                    type: string
+                    example: payment_1640995200000000000
+                  status:
+                    type: string
+                    enum: [completed, failed, pending]
+                    example: completed
+        '400':
+          description: Invalid request or insufficient balance
+        '401':
+          description: Unauthorized
+
+  /api/v1/payments/balance:
+    get:
+      tags:
+        - Payments
+      summary: Get wallet balance
+      description: Retrieve the current wallet balance for a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: user123
+      responses:
+        '200':
+          description: Balance retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+                    format: float
+                    example: 150.75
+        '401':
+          description: Unauthorized
+
+  /api/v1/payments/refund:
+    post:
+      tags:
+        - Payments
+      summary: Process refund
+      description: Refund a payment transaction
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transaction_id
+                - amount
+              properties:
+                transaction_id:
+                  type: string
+                  example: tx_1640995200000000000
+                amount:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  example: 10.00
+      responses:
+        '200':
+          description: Refund processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  new_balance:
+                    type: number
+                    format: float
+                    example: 160.75
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  # Restaurant Endpoints
+  /api/v1/restaurants/{restaurantId}/menu:
+    get:
+      tags:
+        - Restaurants
+      summary: Get restaurant menu
+      description: Retrieve the menu items for a specific restaurant
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: rest456
+      responses:
+        '200':
+          description: Menu retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MenuItem'
+        '404':
+          description: Restaurant not found
+
+    post:
+      tags:
+        - Restaurants
+      summary: Add menu item
+      description: Add a new item to the restaurant menu (Restaurant admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: rest456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - price
+              properties:
+                name:
+                  type: string
+                  example: "Margherita Pizza"
+                price:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  example: 12.99
+      responses:
+        '201':
+          description: Menu item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item_id:
+                    type: string
+                    example: item_1640995200000000000
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - insufficient permissions
+
+  /api/v1/restaurants/menu/{itemId}/availability:
+    put:
+      tags:
+        - Restaurants
+      summary: Update menu item availability
+      description: Update the availability status of a menu item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: item_1640995200000000000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - available
+              properties:
+                available:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Availability updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          description: Unauthorized
+        '404':
+          description: Item not found
+
+  # Delivery Endpoints
+  /api/v1/deliveries:
+    get:
+      tags:
+        - Deliveries
+      summary: Get deliveries
+      description: Get deliveries assigned to a delivery agent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: agent_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: agent_123
+      responses:
+        '200':
+          description: Deliveries retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Delivery'
+        '401':
+          description: Unauthorized
+
+  /api/v1/deliveries/assign:
+    post:
+      tags:
+        - Deliveries
+      summary: Assign delivery
+      description: Assign an order to a delivery agent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - order_id
+              properties:
+                order_id:
+                  type: string
+                  example: order_1640995200000000000
+      responses:
+        '200':
+          description: Delivery assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                    example: agent_1640995200000000000
+        '401':
+          description: Unauthorized
+
+  /api/v1/deliveries/{deliveryId}/status:
+    put:
+      tags:
+        - Deliveries
+      summary: Update delivery status
+      description: Update the status of a delivery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: del_1640995200000000000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [assigned, picked_up, en_route, delivered, cancelled]
+                  example: delivered
+      responses:
+        '200':
+          description: Delivery status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          description: Unauthorized
+        '404':
+          description: Delivery not found
+
+  # Tracking Endpoints
+  /api/v1/tracking/{orderId}:
+    get:
+      tags:
+        - Tracking
+      summary: Track delivery
+      description: Get real-time location updates for a delivery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: order_1640995200000000000
+      responses:
+        '200':
+          description: Location stream started
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  lat:
+                    type: number
+                    format: float
+                    example: 28.6139
+                  lng:
+                    type: number
+                    format: float
+                    example: 77.2090
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2023-12-01T10:00:00Z"
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+  # Health and Monitoring Endpoints
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check service health status
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Prometheus metrics
+      description: Get service metrics for monitoring
+      responses:
+        '200':
+          description: Metrics retrieved
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /circuit-breakers:
+    get:
+      tags:
+        - Monitoring
+      summary: Circuit breaker status
+      description: Get the current status of all circuit breakers
+      responses:
+        '200':
+          description: Circuit breaker status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  circuit_breakers:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        state:
+                          type: string
+                          enum: [closed, open, half_open]
+                        failure_count:
+                          type: integer
+                        last_failure_time:
+                          type: string
+                          format: date-time
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: user123
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        role:
+          type: string
+          enum: [user, admin, restaurant, delivery_agent]
+          example: user
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: order_1640995200000000000
+        user_id:
+          type: string
+          example: user123
+        restaurant_id:
+          type: string
+          example: rest456
+        status:
+          type: string
+          enum: [created, confirmed, preparing, ready, picked_up, delivered, cancelled]
+          example: confirmed
+        amount:
+          type: number
+          format: float
+          example: 25.99
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-12-01T10:00:00Z"
+
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item_1640995200000000000
+        name:
+          type: string
+          example: "Margherita Pizza"
+        price:
+          type: number
+          format: float
+          example: 12.99
+        available:
+          type: boolean
+          example: true
+
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+          example: del_1640995200000000000
+        order_id:
+          type: string
+          example: order_1640995200000000000
+        agent_id:
+          type: string
+          example: agent_123
+        status:
+          type: string
+          enum: [assigned, picked_up, en_route, delivered, cancelled]
+          example: en_route
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-12-01T10:00:00Z"
+
+    Location:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+          example: 28.6139
+        lng:
+          type: number
+          format: float
+          example: 77.2090
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-12-01T10:00:00Z"
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+
+    BadRequestError:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid request format"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal server error"

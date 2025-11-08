@@ -1,0 +1,8 @@
+https://chatgpt.com/c/690581c0-49c0-8320-af16-8d777b567320
+
+| Stage                             | Description                                | Can run locally? | Tools you’ll need                                  | Notes                                                                                       |
+| :-------------------------------- | :----------------------------------------- | :--------------: | :------------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| **A. MVP Service**                | 1 microservice (Gin/Fiber + Postgres)      |      ✅ EASY      | Go, Postgres, Docker Compose                       | Ideal first milestone; runs instantly.                                                      |
+| **B. Core Microservices**         | 2-3 services + gRPC + Redis + Auth         |    ✅ EASY-MED    | Go, protoc, Redis, Docker Compose                  | Great for demonstrating service → service calls and caching.                                |
+| **C. Resilience + Observability** | Kafka/NATS + Prometheus + Grafana + Jaeger |    ✅ MED-HARD    | Docker Compose, Prometheus, Grafana, Jaeger, Kafka | All have official Compose images—runs fine locally, needs tuning for RAM > 8 GB.            |
+| **D. Kubernetes + CI/CD**         | Helm + K8s + GitHub Actions                |    ⚠️ PARTIAL    | kind/minikube, kubectl, Helm                       | You *can* deploy locally, but it’s heavy; better to stop here unless you want K8s practice. |
