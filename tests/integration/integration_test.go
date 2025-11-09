@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -25,7 +26,16 @@ type IntegrationTestSuite struct {
 
 func (suite *IntegrationTestSuite) SetupSuite() {
 	suite.logger, _ = zap.NewDevelopment()
-	suite.db, _ = sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			getEnvOrDefault("DB_USER", "postgres"),
+			getEnvOrDefault("DB_PASSWORD", "postgres"),
+			getEnvOrDefault("DB_HOST", "localhost"),
+			getEnvOrDefault("DB_PORT", "5432"),
+			getEnvOrDefault("DB_NAME", "fooddb"))
+	}
+	suite.db, _ = sql.Open("postgres", dbURL)
 	suite.authService = authPublic.NewAuthService(suite.db, suite.logger)
 	// Use unique email for each test run
 	suite.testEmail = fmt.Sprintf("integration_test_%d@example.com", time.Now().UnixNano())
@@ -53,7 +63,16 @@ func (suite *IntegrationTestSuite) TestAuthService() {
 
 func BenchmarkAuthService(b *testing.B) {
 	logger, _ := zap.NewDevelopment()
-	db, _ := sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			getEnvOrDefault("DB_USER", "postgres"),
+			getEnvOrDefault("DB_PASSWORD", "postgres"),
+			getEnvOrDefault("DB_HOST", "localhost"),
+			getEnvOrDefault("DB_PORT", "5432"),
+			getEnvOrDefault("DB_NAME", "fooddb"))
+	}
+	db, _ := sql.Open("postgres", dbURL)
 	authService := authPublic.NewAuthService(db, logger)
 
 	b.ResetTimer()
@@ -72,8 +91,17 @@ func BenchmarkAuthService(b *testing.B) {
 }
 
 func TestIntegrationTestSuite(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping integration tests in short mode")
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "1" {
+		t.Skip("RUN_INTEGRATION_TESTS is not set; skipping integration tests")
+		return
 	}
 	suite.Run(t, new(IntegrationTestSuite))
+}
+
+// Helper to read env var with default
+func getEnvOrDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
