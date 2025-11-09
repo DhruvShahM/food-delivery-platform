@@ -287,14 +287,22 @@ jobs:
       
     - name: Start infrastructure
       run: |
-        docker compose up -d postgres redis zookeeper kafka
-        sleep 30
-        # Verify Postgres readiness (matching docker-compose creds root/root)
+        docker compose up -d postgres redis zookeeper kafka kong
+        # Wait for Postgres readiness (matching docker-compose creds root/root)
         for i in {1..20}; do
           docker exec $(docker ps -qf name=postgres) pg_isready -U root -d fooddb && exit 0 || true
           sleep 2
         done
         echo "Postgres not ready" && exit 1
+        
+        # Wait for Kong gateway to be healthy
+        echo "Waiting for Kong on :8000..."
+        for i in {1..30}; do
+          if curl -sS http://localhost:8000 >/dev/null 2>&1; then
+            echo "Kong is up"; break; fi; sleep 2; done
+        
+        # If still not reachable, log and continue; load test will analyze gracefully
+        curl -sS http://localhost:8000 || true
     
     - name: Run integration tests
       env:
@@ -321,6 +329,16 @@ jobs:
         DB_PASSWORD: root
         DB_NAME: fooddb
       run: make benchmark-load
+    
+    - name: Upload load test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: load-test-reports
+        path: |
+          benchmark/results.json
+          benchmark/report.html
+          benchmark/analysis.json
     
     - name: Generate test report
       run: |

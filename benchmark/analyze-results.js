@@ -2,38 +2,46 @@ const fs = require('fs');
 
 function analyzeResults() {
   const results = JSON.parse(fs.readFileSync('benchmark/results.json'));
-  const aggregate = results.aggregate;
-  
+  const aggregate = results && results.aggregate ? results.aggregate : {};
+  const counters = aggregate.counters || {};
+  const rates = aggregate.rates || {};
+  const summaries = aggregate.summaries || {};
+
   console.log('🚀 FOOD DELIVERY PERFORMANCE ANALYSIS\n');
   console.log('=' .repeat(50));
   
   // Overall Statistics
   console.log('📊 OVERALL STATISTICS:');
-  console.log(`Total Requests: ${aggregate.counters['http.requests']}`);
-  console.log(`Successful Responses: ${aggregate.counters['http.responses']}`);
-  console.log(`Request Rate: ${aggregate.rates['http.request_rate']} RPS`);
-  console.log(`Test Duration: ${((aggregate.lastMetricAt - aggregate.firstMetricAt) / 1000).toFixed(1)}s`);
+  const totalRequests = counters['http.requests'] || 0;
+  const successfulResponses = counters['http.responses'] || 0;
+  const requestRate = rates['http.request_rate'] || 0;
+  const hasTimes = typeof aggregate.firstMetricAt === 'number' && typeof aggregate.lastMetricAt === 'number';
+  const durationSec = hasTimes ? ((aggregate.lastMetricAt - aggregate.firstMetricAt) / 1000).toFixed(1) : '0.0';
+  console.log(`Total Requests: ${totalRequests}`);
+  console.log(`Successful Responses: ${successfulResponses}`);
+  console.log(`Request Rate: ${requestRate} RPS`);
+  console.log(`Test Duration: ${durationSec}s`);
   console.log();
   
   // Response Time Analysis
   console.log('⏱️  RESPONSE TIME ANALYSIS:');
-  const rt = aggregate.summaries['http.response_time'];
-  console.log(`Average: ${rt.mean}ms`);
-  console.log(`50th percentile: ${rt.p50}ms`);
-  console.log(`95th percentile: ${rt.p95}ms`);
-  console.log(`99th percentile: ${rt.p99}ms`);
-  console.log(`Min/Max: ${rt.min}ms / ${rt.max}ms`);
+  const rt = summaries['http.response_time'] || { mean: 0, p50: 0, p95: 0, p99: 0, min: 0, max: 0 };
+  console.log(`Average: ${rt.mean || 0}ms`);
+  console.log(`50th percentile: ${rt.p50 || 0}ms`);
+  console.log(`95th percentile: ${rt.p95 || 0}ms`);
+  console.log(`99th percentile: ${rt.p99 || 0}ms`);
+  console.log(`Min/Max: ${rt.min || 0}ms / ${rt.max || 0}ms`);
   console.log();
   
   // Error Analysis
   console.log('❌ ERROR ANALYSIS:');
-  const totalRequests = aggregate.counters['http.requests'];
   const errors = {
-    '503 Service Unavailable': aggregate.counters['http.codes.503'] || 0,
-    '401 Unauthorized': aggregate.counters['http.codes.401'] || 0,
-    '500 Server Error': aggregate.counters['http.codes.500'] || 0,
-    'Timeout': aggregate.counters['errors.ETIMEDOUT'] || 0,
-    'Invalid URL': aggregate.counters['errors.Invalid URL - undefined'] || 0
+    '503 Service Unavailable': counters['http.codes.503'] || 0,
+    '401 Unauthorized': counters['http.codes.401'] || 0,
+    '500 Server Error': counters['http.codes.500'] || 0,
+    'Timeout': counters['errors.ETIMEDOUT'] || 0,
+    'Invalid URL': counters['errors.Invalid URL - undefined'] || 0,
+    'Connection Refused': counters['errors.ECONNREFUSED'] || 0
   };
   
   Object.entries(errors).forEach(([error, count]) => {
@@ -46,12 +54,12 @@ function analyzeResults() {
   
   // Endpoint Performance
   console.log('🎯 ENDPOINT PERFORMANCE:');
-  const endpointMetrics = Object.keys(aggregate.counters)
+  const endpointMetrics = Object.keys(counters)
     .filter(key => key.includes('plugins.metrics-by-endpoint'))
     .reduce((acc, key) => {
       const endpoint = key.match(/\/[^.]*/)[0];
       const metric = key.split('.').pop();
-      const count = aggregate.counters[key];
+      const count = counters[key];
       
       if (!acc[endpoint]) acc[endpoint] = {};
       acc[endpoint][metric] = count;
@@ -67,7 +75,7 @@ function analyzeResults() {
   
   // Performance Assessment
   console.log('\n🎯 PERFORMANCE ASSESSMENT:');
-  const successRate = ((aggregate.counters['http.responses'] || 0) / totalRequests * 100).toFixed(1);
+  const successRate = totalRequests > 0 ? (((successfulResponses || 0) / totalRequests) * 100).toFixed(1) : '0.0';
   console.log(`Success Rate: ${successRate}%`);
   
   if (rt.p95 < 500) {
@@ -78,9 +86,9 @@ function analyzeResults() {
     console.log('❌ 95th percentile response time: POOR (> 1000ms)');
   }
   
-  if (aggregate.rates['http.request_rate'] > 100) {
+  if (requestRate > 100) {
     console.log('✅ Request throughput: EXCELLENT (> 100 RPS)');
-  } else if (aggregate.rates['http.request_rate'] > 50) {
+  } else if (requestRate > 50) {
     console.log('⚠️  Request throughput: GOOD (50-100 RPS)');
   } else {
     console.log('❌ Request throughput: POOR (< 50 RPS)');
@@ -98,16 +106,16 @@ function analyzeResults() {
   const analysis = {
     timestamp: new Date().toISOString(),
     summary: {
-      totalRequests: aggregate.counters['http.requests'],
+      totalRequests: totalRequests,
       successRate: successRate,
-      avgResponseTime: rt.mean,
-      p95ResponseTime: rt.p95,
-      requestRate: aggregate.rates['http.request_rate']
+      avgResponseTime: rt.mean || 0,
+      p95ResponseTime: rt.p95 || 0,
+      requestRate: requestRate
     },
     errors: errors,
     assessment: {
       responseTime: rt.p95 < 500 ? 'EXCELLENT' : rt.p95 < 1000 ? 'GOOD' : 'POOR',
-      throughput: aggregate.rates['http.request_rate'] > 100 ? 'EXCELLENT' : aggregate.rates['http.request_rate'] > 50 ? 'GOOD' : 'POOR',
+      throughput: requestRate > 100 ? 'EXCELLENT' : requestRate > 50 ? 'GOOD' : 'POOR',
       reliability: parseFloat(successRate) > 95 ? 'EXCELLENT' : parseFloat(successRate) > 90 ? 'ACCEPTABLE' : 'CRITICAL'
     }
   };
