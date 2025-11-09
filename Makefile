@@ -35,7 +35,7 @@ benchmark-all: benchmark-unit benchmark-integration
 
 benchmark-load:
 	@echo "Starting load test with Artillery (via npx)..."
-	if not exist benchmark mkdir benchmark
+	node -e "require('fs').mkdirSync('benchmark',{recursive:true})"
 	npx --yes artillery run benchmark/artillery-config.yml --output benchmark/results.json
 	npx --yes artillery report benchmark/results.json --output benchmark/report.html
 	node benchmark/analyze-results.js

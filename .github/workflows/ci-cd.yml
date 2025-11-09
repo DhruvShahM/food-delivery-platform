@@ -307,6 +307,11 @@ jobs:
         DB_NAME: fooddb
       run: make benchmark-integration
     
+    - name: Set up Node.js for load testing
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
     - name: Run load tests
       env:
         DATABASE_URL: postgres://root:root@localhost:5432/fooddb?sslmode=disable
