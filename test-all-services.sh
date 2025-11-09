@@ -24,11 +24,11 @@ done
 echo "Running integration tests..."
 export RUN_INTEGRATION_TESTS=1
 # Force a consistent Postgres DSN for integration tests to avoid picking up CI defaults
-export DATABASE_URL="postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/fooddb?sslmode=disable"
 export DB_HOST=localhost
 export DB_PORT=5432
-export DB_USER=root
-export DB_PASSWORD=root
+export DB_USER=postgres
+export DB_PASSWORD=postgres
 export DB_NAME=fooddb
 go test ./tests/integration/... -v
 if [ $? -ne 0 ]; then

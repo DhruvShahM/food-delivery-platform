@@ -29,13 +29,20 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-			getEnvOrDefault("DB_USER", "postgres"),
-			getEnvOrDefault("DB_PASSWORD", "postgres"),
+			getEnvOrDefault("DB_USER", "root"),
+			getEnvOrDefault("DB_PASSWORD", "root"),
 			getEnvOrDefault("DB_HOST", "localhost"),
 			getEnvOrDefault("DB_PORT", "5432"),
 			getEnvOrDefault("DB_NAME", "fooddb"))
 	}
 	suite.db, _ = sql.Open("postgres", dbURL)
+	// Ensure DB is reachable (retry to handle startup races)
+	for i := 0; i < 20; i++ {
+		if err := suite.db.Ping(); err == nil {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 	suite.authService = authPublic.NewAuthService(suite.db, suite.logger)
 	// Use unique email for each test run
 	suite.testEmail = fmt.Sprintf("integration_test_%d@example.com", time.Now().UnixNano())
