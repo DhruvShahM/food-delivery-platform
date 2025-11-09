@@ -42,7 +42,11 @@ func (r *PaymentRepo) Init() error {
 
 func (r *PaymentRepo) GetBalance(userId string) (float64, error) {
 	var balance float64
-	err := r.db.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE user_id = $1 AND status = 'completed'", userId).Scan(&balance)
+	err := r.db.QueryRow(`
+        SELECT COALESCE(SUM(amount), 0) 
+        FROM payments 
+        WHERE userid = $1 AND status = 'completed'
+    `, userId).Scan(&balance)
 	if err != nil {
 		r.logger.Error("Get balance error", zap.Error(err))
 		return 0, err

@@ -23,47 +23,69 @@ func NewPaymentHandler(repo *repository.PaymentRepo, redis *redis.Client, logger
 }
 
 func (h *PaymentHandler) ProcessPayment(ctx context.Context, req *proto.ProcessPaymentRequest) (*proto.ProcessPaymentResponse, error) {
-	// For demo purposes, assume user_id is part of order_id or extract from context
-	// In real implementation, you'd get user_id from authentication context
-	userId := "user123" // TODO: Get from auth context
-
-	balance, err := h.redis.Get(ctx, "wallet:"+userId).Float64()
-	if err != nil || balance < req.Amount {
-		h.logger.Warn("Insufficient balance", zap.String("order_id", req.OrderId), zap.Float64("amount", req.Amount))
-		return &proto.ProcessPaymentResponse{Status: "failed", Error: "Insufficient balance"}, nil
+	userId := req.UserId // Ensure proto has userid; if using OrderId, extract user from context/JWT
+	key := "wallet:" + userId
+	balance, err := h.redis.Get(ctx, key).Float64()
+	if err != nil {
+		// Fall back to DB if Redis miss
+		balance, err = h.repo.GetBalance(userId)
+		if err != nil {
+			h.logger.Error("Get balance error", zap.Error(err))
+			return nil, status.Error(codes.Internal, "Internal error")
+		}
+		// Cache in Redis for future
+		h.redis.Set(ctx, key, balance, 0)
 	}
 
+	if balance < req.Amount {
+		h.logger.Warn("Insufficient balance",
+			zap.String("userid", userId),
+			zap.Float64("amount", req.Amount),
+			zap.Float64("balance", balance))
+		return &proto.ProcessPaymentResponse{
+			Status: "failed",
+			Error:  "Insufficient balance",
+		}, nil
+	}
+
+	// Process payment in DB
 	err = h.repo.Process(userId, req.Amount)
 	if err != nil {
-		h.logger.Error("Process error", zap.Error(err))
-		return &proto.ProcessPaymentResponse{Status: "failed", Error: "Internal error"}, nil
+		h.logger.Error("Process payment error", zap.Error(err))
+		return &proto.ProcessPaymentResponse{
+			Status: "failed",
+			Error:  "Internal error",
+		}, nil
 	}
 
-	// Update balance
-	_, err = h.redis.DecrBy(ctx, "wallet:"+userId, int64(req.Amount)).Result()
+	// Update Redis balance
+	_, err = h.redis.DecrBy(ctx, key, req.Amount).Result()
 	if err != nil {
 		h.logger.Error("Redis update error", zap.Error(err))
 	}
 
 	paymentId := fmt.Sprintf("payment_%d", time.Now().UnixNano())
-	h.logger.Info("Payment processed", zap.String("payment_id", paymentId), zap.String("order_id", req.OrderId), zap.Float64("amount", req.Amount))
-	return &proto.ProcessPaymentResponse{PaymentId: paymentId, Status: "completed"}, nil
+	h.logger.Info("Payment processed",
+		zap.String("paymentid", paymentId),
+		zap.String("userid", userId),
+		zap.Float64("amount", req.Amount))
+	return &proto.ProcessPaymentResponse{
+		PaymentId: paymentId,
+		Status:    "completed",
+	}, nil
 }
 
 func (h *PaymentHandler) GetBalance(ctx context.Context, req *proto.GetBalanceRequest) (*proto.GetBalanceResponse, error) {
 	balance, err := h.redis.Get(ctx, "wallet:"+req.UserId).Float64()
 	if err != nil {
-		// If not in Redis, get from database
 		balance, err = h.repo.GetBalance(req.UserId)
 		if err != nil {
 			h.logger.Error("Get balance error", zap.Error(err))
 			return &proto.GetBalanceResponse{Error: "Internal error"}, nil
 		}
-		// Cache in Redis
 		h.redis.Set(ctx, "wallet:"+req.UserId, balance, 0)
 	}
-
-	h.logger.Info("Balance retrieved", zap.String("user_id", req.UserId), zap.Float64("balance", balance))
+	h.logger.Info("Balance retrieved", zap.String("userid", req.UserId), zap.Float64("balance", balance))
 	return &proto.GetBalanceResponse{Balance: balance}, nil
 }
 

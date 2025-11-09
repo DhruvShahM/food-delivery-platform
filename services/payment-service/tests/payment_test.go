@@ -81,39 +81,41 @@ func (suite *PaymentTestSuite) TestPaymentHandler_GetBalance() {
 	suite.NotNil(resp)
 }
 
-func (suite *PaymentTestSuite) TestPaymentHandler_ProcessPayment_Success() {
-	if suite.db == nil {
-		suite.T().Skip("Database not available")
-		return
-	}
+func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
+	logger := zap.NewDevelopment()
+	db, err := sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
+	require.NoError(t, err)
+	defer db.Close()
+	repo := repository.NewPaymentRepo(db, logger)
+	require.NoError(t, repo.Init())
 
-	req := &proto.ProcessPaymentRequest{
-		OrderId: "test-order", // Changed from UserId to OrderId
-		Amount:  100.0,
-	}
+	redisClient := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	defer redisClient.Close()
 
-	resp, err := suite.handler.ProcessPayment(context.Background(), req)
-	suite.NoError(err)
-	suite.NotNil(resp)
-	suite.NotEmpty(resp.PaymentId)        // Changed from Success to PaymentId
-	suite.Equal("completed", resp.Status) // Check status field
+	// Set initial balance
+	ctx := context.Background()
+	require.NoError(t, redisClient.Set(ctx, "wallet:user1", 100.0, 0).Err())
+
+	h := handler.NewPaymentHandler(repo, redisClient, logger)
+	req := &proto.ProcessPaymentRequest{UserId: "user1", Amount: 20.0} // Use UserId
+	resp, err := h.ProcessPayment(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotEmpty(t, resp.PaymentId)
+	require.Equal(t, "completed", resp.Status) // Assert on Status
+
+	// Verify balance deducted
+	balance, _ := redisClient.Get(ctx, "wallet:user1").Float64()
+	require.Equal(t, 80.0, balance)
 }
 
-func (suite *PaymentTestSuite) TestPaymentHandler_ProcessPayment_InsufficientFunds() {
-	if suite.db == nil {
-		suite.T().Skip("Database not available")
-		return
-	}
-
-	req := &proto.ProcessPaymentRequest{
-		OrderId: "test-order", // Changed from UserId to OrderId
-		Amount:  1000000.0,    // Very large amount
-	}
-
-	resp, err := suite.handler.ProcessPayment(context.Background(), req)
-	suite.NoError(err)
-	suite.NotNil(resp)
-	suite.Equal("failed", resp.Status) // Changed from !resp.Success to status check
+func TestPaymentHandler_ProcessPayment_InsufficientFunds(t *testing.T) {
+	// Similar setup...
+	req := &proto.ProcessPaymentRequest{UserId: "user1", Amount: 200.0}
+	resp, err := h.ProcessPayment(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, "failed", resp.Status)
+	require.Equal(t, "Insufficient balance", resp.Error)
 }
 
 func TestPaymentTestSuite(t *testing.T) {
