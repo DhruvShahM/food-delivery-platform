@@ -18,6 +18,9 @@ type AuthService interface {
 // NewAuthService creates a new auth service instance
 func NewAuthService(db *sql.DB, logger *zap.Logger) AuthService {
 	repo := repository.NewUserRepo(db, logger)
+	if err := repo.Init(); err != nil {
+		logger.Warn("failed to initialize users table", zap.Error(err))
+	}
 	handler := handler.NewAuthHandler(repo, "secret", logger)
 	return &authServiceImpl{handler: handler}
 }

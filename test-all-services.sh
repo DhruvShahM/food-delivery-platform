@@ -22,6 +22,14 @@ done
 
 # Run integration tests
 echo "Running integration tests..."
+export RUN_INTEGRATION_TESTS=1
+# Force a consistent Postgres DSN for integration tests to avoid picking up CI defaults
+export DATABASE_URL="postgres://root:root@localhost:5432/fooddb?sslmode=disable"
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_USER=root
+export DB_PASSWORD=root
+export DB_NAME=fooddb
 go test ./tests/integration/... -v
 if [ $? -ne 0 ]; then
     echo "Integration tests failed"
