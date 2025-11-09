@@ -30,10 +30,21 @@ func (r *PaymentRepo) Init() error {
 		user_id VARCHAR(255),
 		amount DOUBLE PRECISION,
 		status VARCHAR(50),
+		transaction_id VARCHAR(255),
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	)`)
 	if err != nil {
 		r.logger.Error("Init table error", zap.Error(err))
+		return err
+	}
+
+	// Ensure expected columns exist for legacy schemas
+	if _, err := r.db.Exec(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id VARCHAR(255)`); err != nil {
+		r.logger.Error("Add user_id column error", zap.Error(err))
+		return err
+	}
+	if _, err := r.db.Exec(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(255)`); err != nil {
+		r.logger.Error("Add transaction_id column error", zap.Error(err))
 		return err
 	}
 	r.logger.Info("Payments table initialized")
