@@ -45,7 +45,7 @@ func (r *PaymentRepo) GetBalance(userId string) (float64, error) {
 	err := r.db.QueryRow(`
         SELECT COALESCE(SUM(amount), 0) 
         FROM payments 
-        WHERE userid = $1 AND status = 'completed'
+        WHERE user_id = $1 AND status = 'completed'
     `, userId).Scan(&balance)
 	if err != nil {
 		r.logger.Error("Get balance error", zap.Error(err))

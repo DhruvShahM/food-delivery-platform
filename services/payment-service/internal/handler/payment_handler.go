@@ -23,7 +23,7 @@ func NewPaymentHandler(repo *repository.PaymentRepo, redis *redis.Client, logger
 }
 
 func (h *PaymentHandler) ProcessPayment(ctx context.Context, req *proto.ProcessPaymentRequest) (*proto.ProcessPaymentResponse, error) {
-	userId := req.UserId // Ensure proto has userid; if using OrderId, extract user from context/JWT
+	userId := req.OrderId // Using OrderId as the identifier per proto definition
 	key := "wallet:" + userId
 	balance, err := h.redis.Get(ctx, key).Float64()
 	if err != nil {
@@ -31,7 +31,7 @@ func (h *PaymentHandler) ProcessPayment(ctx context.Context, req *proto.ProcessP
 		balance, err = h.repo.GetBalance(userId)
 		if err != nil {
 			h.logger.Error("Get balance error", zap.Error(err))
-			return nil, status.Error(codes.Internal, "Internal error")
+			return nil, fmt.Errorf("internal error")
 		}
 		// Cache in Redis for future
 		h.redis.Set(ctx, key, balance, 0)
@@ -59,7 +59,7 @@ func (h *PaymentHandler) ProcessPayment(ctx context.Context, req *proto.ProcessP
 	}
 
 	// Update Redis balance
-	_, err = h.redis.DecrBy(ctx, key, req.Amount).Result()
+	_, err = h.redis.IncrByFloat(ctx, key, -req.Amount).Result()
 	if err != nil {
 		h.logger.Error("Redis update error", zap.Error(err))
 	}

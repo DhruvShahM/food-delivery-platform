@@ -13,6 +13,7 @@ import (
 	"food-delivery-platform/services/payment-service/internal/repository"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
@@ -97,7 +98,7 @@ func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
 	require.NoError(t, redisClient.Set(ctx, "wallet:user1", 100.0, 0).Err())
 
 	h := handler.NewPaymentHandler(repo, redisClient, logger)
-	req := &proto.ProcessPaymentRequest{UserId: "user1", Amount: 20.0} // Use UserId
+	req := &proto.ProcessPaymentRequest{OrderId: "user1", Amount: 20.0}
 	resp, err := h.ProcessPayment(ctx, req)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
@@ -110,8 +111,21 @@ func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
 }
 
 func TestPaymentHandler_ProcessPayment_InsufficientFunds(t *testing.T) {
-	// Similar setup...
-	req := &proto.ProcessPaymentRequest{UserId: "user1", Amount: 200.0}
+	logger := zap.NewDevelopment()
+	db, err := sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
+	require.NoError(t, err)
+	defer db.Close()
+	repo := repository.NewPaymentRepo(db, logger)
+	require.NoError(t, repo.Init())
+
+	redisClient := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	require.NoError(t, redisClient.Set(ctx, "wallet:user1", 100.0, 0).Err())
+
+	h := handler.NewPaymentHandler(repo, redisClient, logger)
+	req := &proto.ProcessPaymentRequest{OrderId: "user1", Amount: 200.0}
 	resp, err := h.ProcessPayment(ctx, req)
 	require.NoError(t, err)
 	require.Equal(t, "failed", resp.Status)
