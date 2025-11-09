@@ -47,13 +47,13 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     
-    - name: Cache Go modules
-      uses: actions/cache@v3
+    - name: Restore Go modules cache
+      id: cache-lint-restore
+      uses: actions/cache/restore@v4
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
           go-mod-${{ runner.os }}-
     
     - name: Check Go formatting
@@ -109,13 +109,13 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     
-    - name: Cache Go modules
-      uses: actions/cache@v3
+    - name: Restore Go modules cache
+      id: cache-unit-restore
+      uses: actions/cache/restore@v4
       with:
         path: ~/go/pkg/mod
-        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
           go-mod-${{ runner.os }}-
     
     - name: Install PowerShell
@@ -129,6 +129,16 @@ jobs:
     
     - name: Enable memory overcommit for Redis
       run: sudo sysctl vm.overcommit_memory=1
+
+    - name: Prime Go modules (download)
+      run: go mod download all
+
+    - name: Save Go modules cache
+      if: steps.cache-unit-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
     
     # Set up database schema
     - name: Set up test database schema
