@@ -31,7 +31,7 @@ on:
 
 # Environment variables
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.24'
 
 jobs:
   # ===== QUALITY GATES =====
@@ -43,7 +43,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
     
@@ -105,7 +105,7 @@ jobs:
         fi
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
     
@@ -153,7 +153,7 @@ jobs:
         
         CREATE TABLE IF NOT EXISTS orders (
             id VARCHAR(50) PRIMARY KEY,
-            user_id VARCHAR(50) NOT NULL,  -- ✅ FIXED: VARCHAR to match proto
+            user_id VARCHAR(50) NOT NULL,  -- FIXED: VARCHAR to match proto
             restaurant_id VARCHAR(50) NOT NULL,
             amount DECIMAL(10,2) NOT NULL,
             status VARCHAR(50) DEFAULT 'pending',
@@ -178,7 +178,7 @@ jobs:
         );
         
         CREATE TABLE IF NOT EXISTS deliveries (
-            id VARCHAR(50) PRIMARY KEY,  -- ✅ VARCHAR to match proto strings
+            id VARCHAR(50) PRIMARY KEY,  -- VARCHAR to match proto strings
             order_id VARCHAR(50) NOT NULL,
             agent_id VARCHAR(50),
             status VARCHAR(50) DEFAULT 'assigned',
@@ -200,9 +200,9 @@ jobs:
         echo "Verifying database setup..."
         PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'menu', 'orders', 'payments', 'deliveries');" | grep -c "users\|menu\|orders\|payments\|deliveries" | grep -q "5"
         if [ $? -eq 0 ]; then
-          echo "✅ Database schema created successfully!"
+          echo "Database schema created successfully!"
         else
-          echo "❌ Database schema creation failed!"
+          echo "Database schema creation failed!"
           PGPASSWORD=postgres psql -h localhost -U postgres -d fooddb -c "\dt"
           exit 1
         fi
@@ -239,7 +239,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
     
@@ -259,7 +259,7 @@ jobs:
         go build -o bin/server ./cmd/server
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.service }}-binary
         path: services/${{ matrix.service }}/bin/server
@@ -279,18 +279,39 @@ jobs:
       run: |
         docker compose up -d postgres redis zookeeper kafka
         sleep 30
+        # Verify Postgres readiness (matching docker-compose creds root/root)
+        for i in {1..20}; do
+          docker exec $(docker ps -qf name=postgres) pg_isready -U root -d fooddb && exit 0 || true
+          sleep 2
+        done
+        echo "Postgres not ready" && exit 1
     
     - name: Run integration tests
+      env:
+        RUN_INTEGRATION_TESTS: '1'
+        DATABASE_URL: postgres://root:root@localhost:5432/fooddb?sslmode=disable
+        DB_HOST: localhost
+        DB_PORT: '5432'
+        DB_USER: root
+        DB_PASSWORD: root
+        DB_NAME: fooddb
       run: make benchmark-integration
     
     - name: Run load tests
+      env:
+        DATABASE_URL: postgres://root:root@localhost:5432/fooddb?sslmode=disable
+        DB_HOST: localhost
+        DB_PORT: '5432'
+        DB_USER: root
+        DB_PASSWORD: root
+        DB_NAME: fooddb
       run: make benchmark-load
     
     - name: Generate test report
       run: |
         echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "- Integration tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-        echo "- Load tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+        echo "- Integration tests: Passed" >> $GITHUB_STEP_SUMMARY
+        echo "- Load tests: Passed" >> $GITHUB_STEP_SUMMARY
 
   # ===== DEPLOY STAGING =====
   deploy-staging:
