@@ -22,6 +22,7 @@ type Config struct {
 
 	JWTSecret    string   `mapstructure:"jwt_secret"`
 	KafkaBrokers []string `mapstructure:"kafka_brokers"`
+	KafkaTopic   string   `mapstructure:"kafka_topic"`
 	LogLevel     string   `mapstructure:"log_level"`
 	Logger       *zap.Logger
 }
