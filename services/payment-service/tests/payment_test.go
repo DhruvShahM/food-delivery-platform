@@ -20,7 +20,7 @@ import (
 
 // Only run payment DB tests when explicitly enabled in env
 func shouldRunPaymentDBTests() bool {
-    return os.Getenv("RUN_PAYMENT_DB_TESTS") == "1"
+	return os.Getenv("RUN_PAYMENT_DB_TESTS") == "1"
 }
 
 type PaymentTestSuite struct {
@@ -34,10 +34,10 @@ type PaymentTestSuite struct {
 }
 
 func (suite *PaymentTestSuite) SetupTest() {
-    if !shouldRunPaymentDBTests() {
-        suite.T().Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment tests")
-        return
-    }
+	if !shouldRunPaymentDBTests() {
+		suite.T().Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment tests")
+		return
+	}
 	suite.logger, _ = zap.NewDevelopment()
 	suite.redis = redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	suite.client = client.NewPaymentClient(nil, suite.logger) // Remove cbManager parameter
@@ -97,10 +97,10 @@ func (suite *PaymentTestSuite) TestPaymentHandler_GetBalance() {
 }
 
 func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
-    if !shouldRunPaymentDBTests() {
-        t.Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment tests")
-        return
-    }
+	if !shouldRunPaymentDBTests() {
+		t.Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment tests")
+		return
+	}
 	logger, _ := zap.NewDevelopment()
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -148,10 +148,10 @@ func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
 }
 
 func TestPaymentHandler_ProcessPayment_InsufficientFunds(t *testing.T) {
-    if !shouldRunPaymentDBTests() {
-        t.Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment tests")
-        return
-    }
+	if !shouldRunPaymentDBTests() {
+		t.Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment tests")
+		return
+	}
 	logger, _ := zap.NewDevelopment()
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -193,11 +193,11 @@ func TestPaymentHandler_ProcessPayment_InsufficientFunds(t *testing.T) {
 }
 
 func TestPaymentTestSuite(t *testing.T) {
-    if !shouldRunPaymentDBTests() {
-        t.Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment test suite")
-        return
-    }
-    suite.Run(t, new(PaymentTestSuite))
+	if !shouldRunPaymentDBTests() {
+		t.Skip("RUN_PAYMENT_DB_TESTS is not set; skipping payment test suite")
+		return
+	}
+	suite.Run(t, new(PaymentTestSuite))
 }
 
 // Helper function for environment variables
