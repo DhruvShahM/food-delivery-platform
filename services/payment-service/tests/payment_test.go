@@ -83,7 +83,7 @@ func (suite *PaymentTestSuite) TestPaymentHandler_GetBalance() {
 }
 
 func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
-	logger := zap.NewDevelopment()
+	logger, _ := zap.NewDevelopment()
 	db, err := sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
 	require.NoError(t, err)
 	defer db.Close()
@@ -111,7 +111,7 @@ func TestPaymentHandler_ProcessPayment_Success(t *testing.T) {
 }
 
 func TestPaymentHandler_ProcessPayment_InsufficientFunds(t *testing.T) {
-	logger := zap.NewDevelopment()
+	logger, _ := zap.NewDevelopment()
 	db, err := sql.Open("postgres", "postgres://root:root@localhost:5432/fooddb?sslmode=disable")
 	require.NoError(t, err)
 	defer db.Close()
