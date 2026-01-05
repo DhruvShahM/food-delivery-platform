@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    services:
+    - name: auth-service
+      url: http://auth-service:8080
+      routes:
+      - name: auth-routes
+        paths:
+        - /api/v1/auth
+    - name: order-service
+      url: http://order-service:8080
+      routes:
+      - name: order-routes
+        paths:
+        - /api/v1/orders
+    - name: restaurant-service
+      url: http://restaurant-service:8080
+      routes:
+      - name: restaurant-routes
+        paths:
+        - /api/v1/restaurants
+    - name: delivery-service
+      url: http://delivery-service:8080
+      routes:
+      - name: delivery-routes
+        paths:
+        - /api/v1/deliveries
+    - name: payment-service
+      url: http://payment-service:8080
+      routes:
+      - name: payment-routes
+        paths:
+        - /api/v1/payments
+    - name: tracking-service
+      url: http://tracking-service:8080
+      routes:
+      - name: tracking-routes
+        paths:
+        - /api/v1/tracking
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  labels:
+    app: kong
+spec:
+  ports:
+  - port: 8000
+    name: proxy
+  - port: 8001
+    name: admin
+  selector:
+    app: kong
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+spec:
+  selector:
+    matchLabels:
+      app: kong
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kong
+    spec:
+      containers:
+      - name: kong
+        image: kong:3.4
+        env:
+        - name: KONG_DATABASE
+          value: "off"
+        - name: KONG_DECLARATIVE_CONFIG
+          value: "/usr/local/kong/declarative/kong.yml"
+        - name: KONG_PROXY_LISTEN
+          value: "0.0.0.0:8000"
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001"
+        ports:
+        - containerPort: 8000
+          name: proxy
+        - containerPort: 8001
+          name: admin
+        volumeMounts:
+        - name: kong-config
+          mountPath: /usr/local/kong/declarative/kong.yml
+          subPath: kong.yml
+      volumes:
+      - name: kong-config
+        configMap:
+          name: kong-config

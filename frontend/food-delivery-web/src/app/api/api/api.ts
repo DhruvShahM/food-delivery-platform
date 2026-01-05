@@ -1,0 +1,17 @@
+export * from './authentication.service';
+import { AuthenticationService } from './authentication.service';
+export * from './deliveries.service';
+import { DeliveriesService } from './deliveries.service';
+export * from './health.service';
+import { HealthService } from './health.service';
+export * from './monitoring.service';
+import { MonitoringService } from './monitoring.service';
+export * from './orders.service';
+import { OrdersService } from './orders.service';
+export * from './payments.service';
+import { PaymentsService } from './payments.service';
+export * from './restaurants.service';
+import { RestaurantsService } from './restaurants.service';
+export * from './tracking.service';
+import { TrackingService } from './tracking.service';
+export const APIS = [AuthenticationService, DeliveriesService, HealthService, MonitoringService, OrdersService, PaymentsService, RestaurantsService, TrackingService];

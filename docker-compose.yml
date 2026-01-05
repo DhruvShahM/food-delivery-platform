@@ -9,8 +9,6 @@ services:
       POSTGRES_PASSWORD: root
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U root -d fooddb"]
       interval: 10s
@@ -21,8 +19,6 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -38,9 +34,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
-      - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -59,8 +52,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes:
-      - kafka_data:/var/lib/kafka/data
 
   jaeger:
     image: jaegertracing/all-in-one:1.50
@@ -70,8 +61,6 @@ services:
       - "14268:14268"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
-    volumes:
-      - jaeger_data:/tmp
 
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -94,7 +83,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - grafana_data:/var/lib/grafana
       - ./deployments/grafana/provisioning/:/etc/grafana/provisioning/
 
   kong:
@@ -136,15 +124,6 @@ services:
       - food-delivery
     depends_on:
       - kong
-
-volumes:
-  postgres_data:
-  redis_data:
-  zookeeper_data:
-  zookeeper_log:
-  kafka_data:
-  jaeger_data:
-  grafana_data:
 
 networks:
   food-delivery:
